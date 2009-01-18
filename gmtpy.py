@@ -38,6 +38,7 @@ cm = _units['c']
 _gmt_installations = {}
 
 # Set fixed installation(s) to use...
+# (use this, if you want to use different GMT versions simultaneously.)
 
 #_gmt_installations['4.2.1'] = { 'home': '/sw/etch-ia32/gmt-4.2.1',
 #                               'bin':  '/sw/etch-ia32/gmt-4.2.1/bin' }
@@ -46,7 +47,7 @@ _gmt_installations = {}
 #_gmt_installations['4.3.1'] = { 'home': '/sw/share/gmt',
 #                               'bin':  '/sw/bin' }
 
-# ... or autodetect GMT via $PATH and $GMTHOME
+# ... or let GmtPy autodetect GMT via $PATH and $GMTHOME
 
 def cmp_version(a,b):
     ai = [ int(x) for x in a.split('.') ]
