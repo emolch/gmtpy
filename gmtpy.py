@@ -1,6 +1,6 @@
-# GmtPy - A Python interface to GMT
-#
-# Go to http://kinherd.org/gmtpy.html for latest version and documentation.
+'''GmtPy - A Python interface to GMT
+
+Go to http://kinherd.org/gmtpy.html for latest version and documentation.'''
 
 #    Copyright 2009 Sebastian Heimann
 #
