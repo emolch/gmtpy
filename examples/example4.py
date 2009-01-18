@@ -1,4 +1,4 @@
-from gmtpy import GMT, cm, GridLayout, FrameLayout, draw_layout, golden_ratio
+from gmtpy import GMT, cm, GridLayout, FrameLayout, golden_ratio
 import numpy as np
 
 # some data to plot...
@@ -18,8 +18,8 @@ for iwidget in range(2):
     widget.set_vertical( 7*cm/golden_ratio )
     widgets.append( widget )
 
-draw_layout( gmt, layout )
-print layout
+#gmt.draw_layout( layout )
+#print layout
 
 for widget, y in zip(widgets, ys):
     gmt.psbasemap( R=(0,5,0,5),

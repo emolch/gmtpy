@@ -29,70 +29,38 @@ import math
 import numpy as num
 
 golden_ratio   = 1.61803
-point          = 1.0/72.0
 
 # units in points
-units = { 'i':72., 'c':72./2.54, 'm':72.*100./2.54, 'p':1. }
-inch = units['i']
-cm = units['c']
+_units = { 'i':72., 'c':72./2.54, 'm':72.*100./2.54, 'p':1. }
+inch = _units['i']
+cm = _units['c']
 
-alphabet = 'abcdefghijklmnopqrstuvwxyz'
-
-def get_gmt_version( gmtdefaultsbinary, gmthomedir ):
-    args = [ gmtdefaultsbinary ]
-    
-    environ = os.environ.copy()
-    environ['GMTHOME'] = gmthomedir
-    p = subprocess.Popen( args, stderr=subprocess.PIPE, env=environ )
-    (stdout, stderr) = p.communicate()
-    m = re.search(r'(\d+(\.\d+)*)', stderr)
-    if not m:
-        raise Exception("Can't extract version number from output of %s" % gmtdefaults)
-    
-    return m.group(1)    
-
-def detect_gmt_installation():
-    output = subprocess.Popen(["which", "gmtdefaults"], stdout=subprocess.PIPE).communicate()[0].strip()
-    if not output:
-        raise Exception("Can't find GMT installation via PATH")
-    
-    gmtbin = os.path.dirname(output)
-    if 'GMTHOME' not in os.environ:
-        raise Exception('GMTHOME environment variable not set.')
-    
-    gmthome = os.environ['GMTHOME']
-    gmtversion = get_gmt_version( pjoin(gmtbin,'gmtdefaults'), gmthome )
-    return gmtversion, gmthome, gmtbin 
-
-gmt_installations = {}
+_gmt_installations = {}
 
 # Set fixed installation(s) to use...
 
-#gmt_installations['4.2.1'] = { 'home': '/sw/etch-ia32/gmt-4.2.1',
+#_gmt_installations['4.2.1'] = { 'home': '/sw/etch-ia32/gmt-4.2.1',
 #                               'bin':  '/sw/etch-ia32/gmt-4.2.1/bin' }
-#gmt_installations['4.3.0'] = { 'home': '/sw/etch-ia32/gmt-4.3.0',
+#_gmt_installations['4.3.0'] = { 'home': '/sw/etch-ia32/gmt-4.3.0',
 #                               'bin':  '/sw/etch-ia32/gmt-4.3.0/bin' }
-#gmt_installations['4.3.1'] = { 'home': '/sw/share/gmt',
+#_gmt_installations['4.3.1'] = { 'home': '/sw/share/gmt',
 #                               'bin':  '/sw/bin' }
 
-# ... or autodetect GMT via $PATH and $GMTHOME:
-
-gmtversion, gmthome, gmtbin = detect_gmt_installation()
-gmt_installations[gmtversion] = { 'home': gmthome, 'bin': gmtbin }
-
+# ... or autodetect GMT via $PATH and $GMTHOME
 
 def cmp_version(a,b):
     ai = [ int(x) for x in a.split('.') ]
     bi = [ int(x) for x in b.split('.') ]
     return cmp(ai, bi)
 
-newest_installed_gmt_version = sorted(gmt_installations.keys(), cmp=cmp_version)[-1]
+def newest_installed_gmt_version():
+    return sorted(_gmt_installations.keys(), cmp=cmp_version)[-1]
 
 
 # To have consistent defaults, they are hardcoded here and should not be changed.
 
-gmt_defaults_by_version = {}
-gmt_defaults_by_version['4.2.1'] = r'''
+_gmt_defaults_by_version = {}
+_gmt_defaults_by_version['4.2.1'] = r'''
 #
 #       GMT-SYSTEM 4.2.1 Defaults file
 #
@@ -199,7 +167,7 @@ LINE_STEP               = 0.01i
 VECTOR_SHAPE            = 0
 VERBOSE                 = FALSE'''
 
-gmt_defaults_by_version['4.3.0'] = r'''
+_gmt_defaults_by_version['4.3.0'] = r'''
 #
 #	GMT-SYSTEM 4.3.0 Defaults file
 #
@@ -307,7 +275,7 @@ VECTOR_SHAPE		= 0
 VERBOSE			= FALSE'''
 
 
-gmt_defaults_by_version['4.3.1'] = r'''
+_gmt_defaults_by_version['4.3.1'] = r'''
 #
 #	GMT-SYSTEM 4.3.1 Defaults file
 #
@@ -414,14 +382,39 @@ LINE_STEP		= 0.01i
 VECTOR_SHAPE		= 0
 VERBOSE			= FALSE'''
 
+def get_gmt_version( gmtdefaultsbinary, gmthomedir ):
+    args = [ gmtdefaultsbinary ]
+    
+    environ = os.environ.copy()
+    environ['GMTHOME'] = gmthomedir
+    p = subprocess.Popen( args, stderr=subprocess.PIPE, env=environ )
+    (stdout, stderr) = p.communicate()
+    m = re.search(r'(\d+(\.\d+)*)', stderr)
+    if not m:
+        raise Exception("Can't extract version number from output of %s" % gmtdefaults)
+    
+    return m.group(1)    
+
+def detect_gmt_installation():
+    output = subprocess.Popen(["which", "gmtdefaults"], stdout=subprocess.PIPE).communicate()[0].strip()
+    if not output:
+        raise Exception("Can't find GMT installation via PATH")
+    
+    gmtbin = os.path.dirname(output)
+    if 'GMTHOME' not in os.environ:
+        raise Exception('GMTHOME environment variable not set.')
+    
+    gmthome = os.environ['GMTHOME']
+    gmtversion = get_gmt_version( pjoin(gmtbin,'gmtdefaults'), gmthome )
+    return gmtversion, gmthome, gmtbin 
 
 def gmt_default_config(version):
     '''Get default GMT configuration dict for given version.'''
     
-    if not version in gmt_defaults_by_version:
+    if not version in _gmt_defaults_by_version:
         raise Exception('No GMT defaults for version %s found' % version)
     
-    gmt_defaults = gmt_defaults_by_version[version]
+    gmt_defaults = _gmt_defaults_by_version[version]
     
     d = {}
     for line in gmt_defaults.splitlines():
@@ -449,15 +442,24 @@ def diff_defaults(v1,v2):
      
 #diff_defaults('4.2.1', '4.3.1')
 
-# store defaults as dicts into the gmt installations dicts
-for version, installation in gmt_installations.iteritems():
-    installation['defaults'] = gmt_default_config(version)
-    installation['version'] = version
+def setup_gmt_installations():
+    if not setup_gmt_installations.have_done:
+        if not _gmt_installations:
+            gmtversion, gmthome, gmtbin = detect_gmt_installation()
+            _gmt_installations[gmtversion] = { 'home': gmthome, 'bin': gmtbin }
 
-# alias for the newest installed gmt version
-gmt_installations['newest'] = gmt_installations[newest_installed_gmt_version]
+        # store defaults as dicts into the gmt installations dicts
+        for version, installation in _gmt_installations.iteritems():
+            installation['defaults'] = gmt_default_config(version)
+            installation['version'] = version
+    
+        # alias for the newest installed gmt version
+        _gmt_installations['newest'] = _gmt_installations[newest_installed_gmt_version()]
+        setup_gmt_installations.have_done = True
 
-paper_sizes_a = '''A0 2380 3368
+setup_gmt_installations.have_done = False
+
+_paper_sizes_a = '''A0 2380 3368
                       A1 1684 2380
                       A2 1190 1684
                       A3 842 1190
@@ -488,18 +490,28 @@ paper_sizes_a = '''A0 2380 3368
                       ledger 1224 792'''
                       
 
-paper_sizes = {}
-for line in paper_sizes_a.splitlines():
-    k, w, h = line.split()
-    paper_sizes[k.lower()] = float(w), float(h)
+_paper_sizes = {}
 
+def setup_paper_sizes():
+    if not _paper_sizes:
+        for line in _paper_sizes_a.splitlines():
+            k, w, h = line.split()
+            _paper_sizes[k.lower()] = float(w), float(h)
 
+def get_paper_size(k):
+    setup_paper_sizes()
+    return _paper_sizes[k.lower().rstrip('+')]
+
+def all_paper_sizes():
+    setup_paper_sizes()
+    return _paper_sizes
+        
 def make_bbox( width, height, gmt_config, margins=(0.8,0.8,0.8,0.8)):
     
     leftmargin, topmargin, rightmargin, bottommargin = margins
     portrait = gmt_config['PAGE_ORIENTATION'].lower() == 'portrait'
     
-    paper_size = paper_sizes[gmt_config['PAPER_MEDIA'].lower().rstrip('+')]
+    paper_size = get_paper_size(gmt_config['PAPER_MEDIA'])
     if not portrait: paper_size = paper_size[1], paper_size[0]
             
     xoffset = (paper_size[0] - (width + leftmargin + rightmargin)) / 2.0 + leftmargin;
@@ -540,13 +552,13 @@ def check_gmt_installation( installation ):
                          '(Looking at output of %s)') % (version, versionfound, gmtdefaults))
     
 def get_gmt_installation(version):
-        
-    if version not in gmt_installations:
+    setup_gmt_installations()
+    if version not in _gmt_installations:
         logging.warn('GMT version %s not installed, taking version %s instead' % 
-                                                      (version, newest_installed_gmt_version))
+                                                      (version, newest_installed_gmt_version()))
         version = 'newest'
         
-    installation = dict(gmt_installations[version])
+    installation = dict(_gmt_installations[version])
     
     check_gmt_installation( installation )
     
@@ -556,15 +568,15 @@ def gmtdefaults_as_text(version='newest'):
     
     '''Get the built-in gmtdefaults.'''
     
-    if version not in gmt_installations:
+    if version not in _gmt_installations:
         logging.warn('GMT version %s not installed, taking version %s instead' % 
-                                                      (version, newest_installed_gmt_version))
+                                                      (version, newest_installed_gmt_version()))
         version = 'newest'
         
     if version == 'newest':
-        version = newest_installed_gmt_version
+        version = newest_installed_gmt_version()
         
-    return gmt_defaults_by_version[version]
+    return _gmt_defaults_by_version[version]
     
 
 
@@ -1787,11 +1799,11 @@ class GMT:
     def to_points(self, string):
         if not string: return 0
         unit = string[-1]
-        if unit in units:
-            return float(string[:-1])/units[unit]
+        if unit in _units:
+            return float(string[:-1])/_units[unit]
         else:
             default_unit = gmt.gmt_config['MEASURE_UNIT'].lower()[0]
-            return float(string)/units[default_unit]
+            return float(string)/_units[default_unit]
     
     def gen_gmt_config_file(self, config_filename, config ):
         f = open(config_filename,'w')
@@ -1987,7 +1999,7 @@ class GMT:
            given, returns a path ending in that `name`.'''
         
         if not name: 
-            name = ''.join( [ random.choice(alphabet) for i in range(10) ])
+            name = ''.join( [ random.choice('abcdefghijklmnopqrstuvwxyz') for i in range(10) ])
         
         fn = pjoin(self.tempdir, name)
         return fn
@@ -2062,19 +2074,19 @@ class GMT:
             pm = pm[:-1]
             
         orient = self.gmt_config['PAGE_ORIENTATION'].lower()
-        if pm in paper_sizes:
+        if pm in all_paper_sizes():
            
             if orient == 'portrait':
-                return paper_sizes[pm]
+                return get_paper_size(pm)
             else:
-                return paper_sizes[pm][1], paper_sizes[pm][0]
+                return get_paper_size(pm)[1], get_paper_size(pm)[0]
         
         m = re.match(r'custom_([0-9.]+)([cimp]?)x([0-9.]+)([cimp]?)', pm)
         if m:
             w, uw, h, uh = m.groups()
             w, h = float(w), float(h)
-            if uw: w *= units[uw]
-            if uh: h *= units[uh]
+            if uw: w *= _units[uw]
+            if uh: h *= _units[uh]
             if orient == 'portrait':
                 return w,h
             else:
