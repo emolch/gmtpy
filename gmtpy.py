@@ -1,3 +1,18 @@
+! 
+!    Copyright 2009 Sebastian Heimann
+! 
+!    Licensed under the Apache License, Version 2.0 (the "License");
+!    you may not use this file except in compliance with the License.
+!    You may obtain a copy of the License at
+! 
+!        http://www.apache.org/licenses/LICENSE-2.0
+! 
+!    Unless required by applicable law or agreed to in writing, software
+!    distributed under the License is distributed on an "AS IS" BASIS,
+!    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+!    See the License for the specific language governing permissions and
+!    limitations under the License.
+!
 
 import subprocess
 import cStringIO
@@ -51,13 +66,16 @@ def detect_gmt_installation():
 
 gmt_installations = {}
 
-# Expamples how to use multiple installations
+# Set fixed installation(s) to use...
+
 #gmt_installations['4.2.1'] = { 'home': '/sw/etch-ia32/gmt-4.2.1',
 #                               'bin':  '/sw/etch-ia32/gmt-4.2.1/bin' }
 #gmt_installations['4.3.0'] = { 'home': '/sw/etch-ia32/gmt-4.3.0',
 #                               'bin':  '/sw/etch-ia32/gmt-4.3.0/bin' }
 #gmt_installations['4.3.1'] = { 'home': '/sw/share/gmt',
 #                               'bin':  '/sw/bin' }
+
+# ... or autodetect GMT via $PATH and $GMTHOME:
 
 gmtversion, gmthome, gmtbin = detect_gmt_installation()
 gmt_installations[gmtversion] = { 'home': gmthome, 'bin': gmtbin }
@@ -2207,49 +2225,10 @@ def nice_palette(gmt, widget, scaleguru, cptfile, zlabeloffset=0.8*inch, innerti
 
 if __name__ == '__main__':
     
-    examples_dir = 'gmtpy-examples'
+    examples_dir = 'gmtpy_module_examples'
     if os.path.exists(examples_dir):
         shutil.rmtree(examples_dir)
     os.mkdir(examples_dir)
-    
-    
-    x = FrameLayout()    
-    y = GridLayout(3,3)
-    y.set_widget(1,1,x)
-    
-    corners = y.get_corners(descend=True)
-    rects = num.array(y.get_sizes(),dtype=num.float)
-    rects_wid = rects[:,0,0]
-    rects_hei = rects[:,0,1]
-    rects_center_x = rects[:,1,0] + rects_wid*0.5
-    rects_center_y = rects[:,1,1] + rects_hei*0.5
-    nrects = len(rects)
-    prects = (rects_center_x, rects_center_y, num.arange(nrects), num.zeros(nrects), rects_hei,rects_wid,)
-    
-    points = num.array(corners,dtype=num.float)
-    
-    gmt = GMT(config={'PAPER_MEDIA':'Custom_%gx%g' % (5.*inch,3.*inch), 
-                       'FRAME_PEN':'2p',})
-    
-    widget = gmt.default_layout().get_widget()
-    
-    axx = Ax( mode='min-max', space=0.05 )
-    ayy = Ax( mode='min-max', space=0.05 )
-    plot = ScaleGuru( [ (points[:,0], points[:,1]) ], axes=(axx,ayy), aspect=widget.height()/widget.width() )
-    
-    cptfile = gmt.tempfilename()
-    gmt.makecpt( C = 'ocean',
-                  T = '%g/%g/%g' % (-nrects,nrects,1),
-                  Z = True, 
-                  out_filename = cptfile)
-    
-    gmt.psxy( in_columns = prects,
-               C = cptfile,
-               W = '2p/black', 
-               S = 'J',
-               *(widget.XYJ() + plot.RB()))
-               
-    gmt.save('test.pdf')
     
     ### Example 1
     
