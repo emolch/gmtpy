@@ -37,6 +37,37 @@ _units = { 'i':72., 'c':72./2.54, 'm':72.*100./2.54, 'p':1. }
 inch = _units['i']
 cm = _units['c']
 
+# some awsome colors
+tango_colors = {
+'butter1': (252, 233,  79),
+'butter2': (237, 212,   0),
+'butter3': (196, 160,   0),
+'chameleon1': (138, 226,  52),
+'chameleon2': (115, 210,  22),
+'chameleon3': ( 78, 154,   6),
+'orange1': (252, 175,  62),
+'orange2': (245, 121,   0),
+'orange3': (206,  92,   0),
+'skyblue1': (114, 159, 207),
+'skyblue2': ( 52, 101, 164),
+'skyblue3': ( 32,  74, 135),
+'plum1': (173, 127, 168),
+'plum2': (117,  80, 123),
+'plum3': ( 92,  53, 102),
+'chocolate1': (233, 185, 110),
+'chocolate2': (193, 125,  17),
+'chocolate3': (143,  89,   2),
+'scarletred1': (239,  41,  41),
+'scarletred2': (204,   0,   0),
+'scarletred3': (164,   0,   0),
+'aluminium1': (238, 238, 236),
+'aluminium2': (211, 215, 207),
+'aluminium3': (186, 189, 182),
+'aluminium4': (136, 138, 133),
+'aluminium5': ( 85,  87,  83),
+'aluminium6': ( 46,  52,  54)
+}
+
 _gmt_installations = {}
 
 # Set fixed installation(s) to use...
@@ -966,7 +997,10 @@ class ScaleGuru(Guru):
         maxdim = 2
         if data_tuples:
             maxdim = max(maxdim,max( [ len(dt) for dt in data_tuples ] ))
-        
+        else:
+            if axes:
+                maxdim = len(axes)
+            data_tuples = [ ([],[]) ] * maxdim
         if axes is not None:
             self.axes = axes
         else:
@@ -977,13 +1011,13 @@ class ScaleGuru(Guru):
         # sophisticated data-range calculation
         data_ranges = [None] * maxdim
         for dt in data_tuples:
-            
             in_range = True
             for ax,x in zip(self.axes, dt):
-                if ax.limits:
+                if ax.limits:                    
                     in_range = num.logical_and(in_range, num.logical_and(ax.limits[0]<=x, x<=ax.limits[1]))
             
             for i,ax,x in zip(range(maxdim),self.axes, dt):
+
                 if not ax.limits:
                     if in_range is not True:
                         xmasked = num.where(in_range, x, num.NaN)
@@ -992,15 +1026,19 @@ class ScaleGuru(Guru):
                         range_this = num.nanmin(x), num.nanmax(x)
                 else:
                     range_this = ax.limits
-                
+                                
                 if data_ranges[i] is None and range_this[0] <= range_this[1]:
                     data_ranges[i] = range_this
                 else:
-                    data_ranges[i] = (min(data_ranges[i][0],range_this[0]),
-                                      max(data_ranges[i][1],range_this[1]))
+                    mi,ma = range_this
+                    if data_ranges[i] is not None:
+                        mi = min(data_ranges[i][0],mi)
+                        ma = max(data_ranges[i][1],ma)
+                        
+                    data_ranges[i] = (mi,ma)
                 
         for i in range(len(data_ranges)):
-            if data_ranges[i] is None:
+            if data_ranges[i] is None or not (num.isfinite(data_ranges[i][0]) and num.isfinite(data_ranges[i][1])):
                 data_ranges[i] = (0.,1.)
         
         self.data_ranges = data_ranges
