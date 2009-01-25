@@ -1875,7 +1875,6 @@ class GMT:
         out_discard     = kwargs.pop('out_discard', None)
         finish          = kwargs.pop('finish',      False)
         suppressdefaults = kwargs.pop('suppress_defaults',    False)
-        suppressko       = kwargs.pop('suppress_ko_handling', False)
         config_override = kwargs.pop('config', None)
         
         assert(not self.finished)
@@ -1921,7 +1920,7 @@ class GMT:
                 options.append( '-%s%s' % (k,str(v)) )
        
         # if not redirecting to an external sink, handle -K -O
-        if not out_stream and not suppressko:
+        if not out_stream:
             if not finish:
                 options.append('-K')
             else:
@@ -2025,9 +2024,19 @@ class GMT:
            out_filename: Output is dumped to the given file.
            out_discard:  If True, output is dumped to /dev/null.
         
-        If the keyword argument `finish` is present, the postscript file, which
-        is maintained by the GMT instance is finished, and no further plotting
-        is allowed.'''
+        Additional keyword arguments:
+        
+           config:      Dict with GMT defaults which override the currently
+                        active set of defaults exclusively during this call.
+                        
+           finish:      If True, the postscript file, which is maintained by the 
+                        GMT instance is finished, and no further plotting is 
+                        allowed.
+                        
+           suppress_defaults:
+                        Suppress appending of the '+gmtdefaults' option to the 
+                        command.
+        '''
         
         def f(*args, **kwargs):
             return self._gmtcommand(command, *args, **kwargs)
