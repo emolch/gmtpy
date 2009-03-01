@@ -827,7 +827,10 @@ class AutoScaler:
         if self.inc is not None:
             inc = self.inc
         else:
-            inc = nice_value( (ma-mi)/self.approx_ticks )
+            if self.approx_ticks > 0.:
+                inc = nice_value( (ma-mi)/self.approx_ticks )
+            else:
+                inc = nice_value( (ma-mi)*10. )
         
         if inc == 0.0:
             inc = 1.0
@@ -987,7 +990,10 @@ class ScaleGuru(Guru):
 
     '''
     
-    def __init__(self, data_tuples=None, axes=None, aspect=None):
+    def __init__(self, data_tuples=None, axes=None, aspect=None, percent_interval=None):
+        
+        if percent_interval is not None:
+            from scipy.stats import scoreatpercentile as scap
         
         self.templates = dict( 
             R='-R%(xmin)g/%(xmax)g/%(ymin)g/%(ymax)g',
@@ -1000,7 +1006,7 @@ class ScaleGuru(Guru):
         else:
             if axes:
                 maxdim = len(axes)
-            data_tuples = [ ([],[]) ] * maxdim
+            data_tuples = [ ([],)* maxdim ]
         if axes is not None:
             self.axes = axes
         else:
@@ -1019,11 +1025,24 @@ class ScaleGuru(Guru):
             for i,ax,x in zip(range(maxdim),self.axes, dt):
 
                 if not ax.limits:
-                    if in_range is not True:
-                        xmasked = num.where(in_range, x, num.NaN)
-                        range_this = num.nanmin(xmasked), num.nanmax(xmasked)
+                    if len(x) >= 1:
+                        if in_range is not True:
+                            xmasked = num.where(in_range, x, num.NaN)
+                            if percent_interval is None:
+                                range_this = num.nanmin(xmasked), num.nanmax(xmasked)
+                            else:
+                                xmasked_finite = num.compress(num.isfinite(xmasked), xmasked)
+                                range_this = (scap(xmasked_finite, (100.-percent_interval)/2.),
+                                            scap(xmasked_finite, 100.-(100.-percent_interval)/2.))
+                        else:
+                            if percent_interval is None:
+                                range_this = num.nanmin(x), num.nanmax(x)
+                            else:
+                                xmasked_finite = num.compress(num.isfinite(xmasked), xmasked)
+                                range_this = (scap(xmasked_finite, (100.-percent_interval)/2.),
+                                            scap(xmasked_finite, 100.-(100.-percent_interval)/2.))
                     else:
-                        range_this = num.nanmin(x), num.nanmax(x)
+                        range_this = (0.,1.)
                 else:
                     range_this = ax.limits
                                 
@@ -1176,12 +1195,31 @@ class Widget(Guru):
         self.parent = parent
         self.dirty = True
     
-    def set_parent(self, parent):        
+    def set_parent(self, parent):
+        
+        '''Set the parent widget.
+        
+        This method should not be called directly. The set_widget() methods are 
+        responsible for calling this.
+        '''
+        
         self.parent = parent
         self.dirtyfy()
         
     def get_parent(self):
+        
+        '''Get the widgets parent widget.'''
+        
         return self.parent
+    
+    def get_root(self):
+        
+        '''Get the root widget in the layout hierarchy.'''
+        
+        if self.parent is not None:
+            return self.get_parent()
+        else:
+            return self
     
     def set_horizontal(self, minimal=None, grow=None):
         
@@ -1318,6 +1356,17 @@ class Widget(Guru):
             s += '\n'.join([ '  '+ indent('  ', str(c)) for c in children ])
         return s
         
+    def policies_debug_str(self):
+        
+        def indent(ind,str):
+            return ('\n'+ind).join(str.splitlines())
+        mins, grows, aspect = self.get_policy()
+        s = "%s: minimum=(%s,%s), grow=(%s,%s), aspect=%s\n" % ((self.__class__,)+mins+grows+(aspect,))
+        children = self.get_children()
+        if children:
+            s += '\n'.join([ '  '+ indent('  ', c.policies_debug_str()) for c in children ])
+        return s
+        
     def get_corners(self, descend=False):
         
         '''Get coordinates of the corners of the widget.
@@ -1399,7 +1448,7 @@ class Widget(Guru):
    
     def width(self):
         
-        '''Get current height of the widget.
+        '''Get current width of the widget.
         
         Triggers layouting and returns width.'''
         
@@ -1408,7 +1457,7 @@ class Widget(Guru):
         
     def height(self):
         
-        '''Get current width of the widget.
+        '''Get current height of the widget.
         
         Triggers layouting and return height.'''
         
@@ -1580,8 +1629,13 @@ class FrameLayout(Widget):
         
         ah = sh - (sl[0]+sr[0]+sc[0])
         av = sv - (st[1]+sb[1]+sc[1])
-        if ah < 0.0 or av < 0.0:
-            raise Exception("Container too small for contents")
+        
+        if ah < 0.0:
+            raise Exception("Container not wide enough for contents (FrameLayout, available: %g cm, needed: %g cm)" % (sh/cm,(sl[0]+sr[0]+sc[0])/cm))
+        if av < 0.0:
+            raise Exception("Container not high enough for contents (FrameLayout, available: %g cm, needed: %g cm)" % (sv/cm,(st[1]+sb[1]+sc[1])/cm))
+
+            
         slh, srh, sch = distribute( (sl[0], sr[0], sc[0]), (gl[0],gr[0],gc[0]), ah )
         stv, sbv, scv = distribute( (st[1], sb[1], sc[1]), (gt[1],gb[1],gc[1]), av )
         #if self.center.aspect is not None:
@@ -1700,8 +1754,10 @@ class GridLayout(Widget):
         # available additional space
         ah = sh - num.sum(esh.max(0))
         av = sv - num.sum(esv.max(1))
-        if ah < 0.0 or av < 0.0:
-            raise Exception("Container too small for contents")
+        if ah < 0.0:
+            raise Exception("Container not wide enough for contents (GridLayout, available: %g cm, needed: %g cm)" % (sh/cm,(num.sum(esh.max(0)))/cm))
+        if av < 0.0:
+            raise Exception("Container not high enough for contents (GridLayout, available: %g cm, needed: %g cm)" % (sv/cm,(num.sum(esv.max(1)))/cm))
         
         nx, ny = esh.shape
         
@@ -1836,6 +1892,9 @@ class GMT:
        
         self.layout = None
         self.command_log = []
+    
+    def get_config(self, key):
+        return self.gmt_config[key]
     
     def to_points(self, string):
         if not string: return 0
@@ -2302,7 +2361,7 @@ if __name__ == '__main__':
     
     ### Example 2
     
-    gmt = GMT(config=dict(PAPER_MEDIA='Custom_%gx%g' % (7*inch, 7*inch)))
+    gmt = GMT(config=dict(PAPER_MEDIA='Custom_%ix%i' % (int(7*inch), int(7*inch))))
     gmt.pscoast( R='g', 
                  J='E%g/%g/%g/%gi' % (0., 0., 180., 6.),
                  B='0g0', 
@@ -2359,7 +2418,7 @@ if __name__ == '__main__':
     xax = Ax( label='Time', unit='s' )
     yax = Ax( label='Amplitude', unit='m', scaled_unit='nm', scaled_unit_factor=1e9, approx_ticks=5, space=0.05  )
     guru = ScaleGuru( [(x,y1),(x,y2)], axes=(xax,yax) )
-    gmt = GMT(config={'PAPER_MEDIA':'Custom_%gx%g' % (8*inch,3*inch)})
+    gmt = GMT(config={'PAPER_MEDIA':'Custom_%ix%i' % (int(8*inch),int(3*inch))})
     layout = gmt.default_layout()
     widget = layout.get_widget()
     
