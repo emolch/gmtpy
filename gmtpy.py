@@ -652,6 +652,8 @@ class Guru:
         return self.fill(templates, **kwargs)
         
     def __getattr__(self, template_names):
+        if [ n for n in template_names if n not in self.templates ]:
+            raise AttributeError( template_names )
         def f(**kwargs):
             return self._simple_fill(template_names, **kwargs)
         return f
@@ -939,7 +941,7 @@ class Ax(AutoScaler):
         return ' '.join(p)
         
         
-    def make_params(self, data_range, ax_projection=False, override_mode=None):
+    def make_params(self, data_range, ax_projection=False, override_mode=None, override_scaled_unit_factor=None):
         '''Get min, max, increment and label string for ax display.'
         
         Returns minimum, maximum, increment and label string including unit and
@@ -949,8 +951,11 @@ class Ax(AutoScaler):
         returned, e.g. min, max and inc are returned in scaled units. Otherwise
         the values are returned in the original units, without any scaling.
         '''
-        
+            
         sf = self.scaled_unit_factor
+        
+        if override_scaled_unit_factor is not None:
+            sf = override_scaled_unit_factor
         
         dr_scaled = [ sf*x for x in data_range ]
         
@@ -960,7 +965,7 @@ class Ax(AutoScaler):
         
         if ax_projection:
             exp = self.make_exp( inc )
-            if sf == 1.:
+            if sf == 1. and override_scaled_unit_factor is None:
                 unit = self.unit
             else:
                 unit = self.scaled_unit
@@ -1092,11 +1097,11 @@ class ScaleGuru(Guru):
             if ywid < xwid*self.aspect:
                 ymi -= (xwid*self.aspect - ywid)*0.5
                 yma += (xwid*self.aspect - ywid)*0.5
-                ymi, yma, yinc, ylabel = self.axes[1].make_params( (ymi, yma), ax_projection, override_mode='off' )
+                ymi, yma, yinc, ylabel = self.axes[1].make_params( (ymi, yma), ax_projection, override_mode='off', override_scaled_unit_factor=1. )
             elif xwid < ywid/self.aspect:
                 xmi -= (ywid/self.aspect - xwid)*0.5
                 xma += (ywid/self.aspect - xwid)*0.5
-                xmi, xma, xinc, xlabel = self.axes[0].make_params( (xmi, xma), ax_projection, override_mode='off' )
+                xmi, xma, xinc, xlabel = self.axes[0].make_params( (xmi, xma), ax_projection, override_mode='off', override_scaled_unit_factor=1.)
         
         params = dict(xmin=xmi, xmax=xma, xinc=xinc, xlabel=xlabel, 
                       ymin=ymi, ymax=yma, yinc=yinc, ylabel=ylabel)
