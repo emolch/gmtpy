@@ -29,6 +29,7 @@ import random
 import logging
 import math
 import numpy as num
+import copy
 
 golden_ratio   = 1.61803
 
@@ -68,6 +69,34 @@ tango_colors = {
 'aluminium6': ( 46,  52,  54)
 }
 
+graph_colors = [ tango_colors[_x] for _x in ('scarletred2', 'skyblue3', 'chameleon3', 'orange2', 'plum2', 'chocolate2', 'butter2') ]
+
+def color(x=None):
+    '''Generate a string for GMT option arguments expecting a color.
+    
+    If x is None, a random color is returned. If it is an integer, the corresponding
+    gmtpy.graph_colors[x] or black returned. If it is a string and the corresponding
+    gmtpy.tango_colors[x] exists, this is returned, or the string is passed through.
+    If x is a tuple, it is transformed into the string form which GMT expects.
+    '''
+    
+    if x is None:
+        return '%i/%i/%i' % [ random.randint(0,255) for _x in 'rgb' ]
+        
+    if isinstance(x,int):
+        if 0 <= x < len(graph_colors):
+            return '%i/%i/%i' % graph_colors[x]
+        else:
+            return '0/0/0'
+        
+    elif isinstance(x,str):
+        if x in tango_colors:
+            return '%i/%i/%i' % tango_colors[x]
+        else:
+            return string
+
+    return '%i/%i/%i' % x
+        
 _gmt_installations = {}
 
 # Set fixed installation(s) to use...
@@ -2321,6 +2350,59 @@ class GMT:
                 S = 'J',
                 R = (bb[0],bb[2],bb[1],bb[3]),
                 *layout.XYJ())
+
+def simpleconf_to_ax(conf, axname):
+    c = {}
+    x = axname
+    for x in ('', axname):
+        for k in ('label', 'unit', 'scaled_unit', 'scaled_unit_factor', 'space', 'mode', 'approx_ticks', 'limits'):
+            if x+k in conf: c[k] = conf[x+k]
+            
+    return Ax( **c )
+
+class Simple:
+    def __init__(self, **simple_config):
+        self.data = []
+        self.symbols = []
+        self.config = copy.deepcopy(simple_config)
+        
+        self.default_config = {
+            'width': 15.*cm,
+            'height': 15.*cm / golden_ratio,
+            'margins': (2.*cm, 2.*cm, 2.*cm, 2.*cm),
+        }
+        
+    def plot(self, data, symbol=''):
+        self.data.append(data)
+        self.symbols.append(symbol)
+    
+    def set(self, **kwargs):
+        self.config.update(kwargs)
+    
+    def save(self, filename):
+
+        conf = dict(self.default_config)
+        conf.update(self.config)
+        
+        w = conf.pop('width')
+        h = conf.pop('height')
+        margins = conf.pop('margins')
+            
+        gmt = GMT( config={ 'PAPER_MEDIA':'Custom_%ix%i' % (w,h), } ) 
+        
+        layout = gmt.default_layout()
+        widget = layout.get_widget()
+        
+        axes = [ simpleconf_to_ax(conf,x) for x in 'xy' ]
+        scaler = ScaleGuru( self.data, axes=axes )
+        
+        gmt.psbasemap( *(widget.JXY() + scaler.RB(ax_projection=True)) )
+        rxyj = scaler.R() + widget.JXY()
+        for dat, sym in zip(self.data,self.symbols):
+            gmt.psxy( in_columns=dat, *(sym.split()+rxyj) )
+            
+        gmt.save(filename)
+
 
 def nice_palette(gmt, widget, scaleguru, cptfile, zlabeloffset=0.8*inch, innerticks=True):
 
