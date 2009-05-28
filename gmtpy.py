@@ -93,7 +93,7 @@ def color(x=None):
         if x in tango_colors:
             return '%i/%i/%i' % tango_colors[x]
         else:
-            return string
+            return x
 
     return '%i/%i/%i' % x
         
@@ -1053,7 +1053,7 @@ class ScaleGuru(Guru):
         for dt in data_tuples:
             in_range = True
             for ax,x in zip(self.axes, dt):
-                if ax.limits:                    
+                if ax.limits:
                     in_range = num.logical_and(in_range, num.logical_and(ax.limits[0]<=x, x<=ax.limits[1]))
             
             for i,ax,x in zip(range(maxdim),self.axes, dt):
@@ -2355,7 +2355,7 @@ def simpleconf_to_ax(conf, axname):
     c = {}
     x = axname
     for x in ('', axname):
-        for k in ('label', 'unit', 'scaled_unit', 'scaled_unit_factor', 'space', 'mode', 'approx_ticks', 'limits'):
+        for k in ('label', 'unit', 'scaled_unit', 'scaled_unit_factor', 'space', 'mode', 'approx_ticks', 'limits', 'inc'):
             if x+k in conf: c[k] = conf[x+k]
             
     return Ax( **c )
@@ -2366,6 +2366,9 @@ class Simple:
         self.symbols = []
         self.config = copy.deepcopy(simple_config)
         
+        self.data_x = []
+        self.symbols_x = []
+
         self.default_config = {
             'width': 15.*cm,
             'height': 15.*cm / golden_ratio,
@@ -2375,7 +2378,11 @@ class Simple:
     def plot(self, data, symbol=''):
         self.data.append(data)
         self.symbols.append(symbol)
-    
+        
+    def plot_x(self, data, symbol=''):
+        self.data_x.append(data)
+        self.symbols_x.append(symbol)
+
     def set(self, **kwargs):
         self.config.update(kwargs)
     
@@ -2397,10 +2404,19 @@ class Simple:
         scaler = ScaleGuru( self.data, axes=axes )
         
         gmt.psbasemap( *(widget.JXY() + scaler.RB(ax_projection=True)) )
+        
+        scaler_x = copy.deepcopy(scaler)
+        scaler_x.data_ranges[1] = (0.,1.)
+        scaler_x.axes[1].mode = 'off'
+        for dat, sym in zip(self.data_x,self.symbols_x):
+            gmt.psxy( in_columns=dat, *(sym.split() + scaler_x.R() + widget.JXY()) )
+        
         rxyj = scaler.R() + widget.JXY()
         for dat, sym in zip(self.data,self.symbols):
             gmt.psxy( in_columns=dat, *(sym.split()+rxyj) )
             
+        
+
         gmt.save(filename)
 
 
