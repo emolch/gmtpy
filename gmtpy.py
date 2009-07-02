@@ -17,7 +17,7 @@ Go to http://kinherd.org/gmtpy.html for latest version and documentation.'''
 #    limitations under the License.
 
 import subprocess
-import cStringIO
+from cStringIO import StringIO
 import re
 import os
 import sys
@@ -30,6 +30,7 @@ import logging
 import math
 import numpy as num
 import copy
+from select import select
 
 golden_ratio   = 1.61803
 
@@ -1862,6 +1863,70 @@ def aspect_for_projection(*args, **kwargs):
     l, b, r, t = gmt.bbox()
     return (t-b)/(r-l)
 
+
+class TableLiner:
+    '''Utility class to turn tables into lines.'''
+    
+    def __init__(self, in_columns=None, in_rows=None):
+        self.in_columns = in_columns
+        self.in_rows = in_rows
+        
+    def __iter__(self):
+        if self.in_columns is not None:
+            for row in izip(*self.in_columns):
+                yield ' '.join([str(x) for x in row])+'\n'
+                
+        if self.in_rows is not None:
+            for row in self.in_rows:
+                yield ' '.join([str(x) for x in row])+'\n'
+            
+class LineStreamChopper:
+    '''File-like object to buffer data.'''
+    
+    def __init__(self, liner):
+        self.chopsize = None
+        self.liner = liner
+        self.chop_iterator = None
+        self.closed = False
+        
+    def _chopiter(self):
+        buf = StringIO()
+        for line in self.liner:
+            buf.write(line)
+            buflen = buf.tell()
+            if self.chopsize is not None and buflen >= self.chopsize:
+                buf.seek(0)
+                while buf.tell() <= buflen-self.chopsize:
+                    yield buf.read(self.chopsize)
+                    
+                newbuf = StringIO()
+                newbuf.write(buf.read())
+                buf.close()
+                buf = newbuf
+        
+        yield(buf.getvalue())
+        buf.close()
+
+    def read(self,size=None):
+        if self.closed: raise ValueError('Cannot read from closed LineStreamChopper.')
+        if self.chop_iterator is None:
+            self.chopsize = size
+            self.chop_iterator = self._chopiter()
+            
+        self.chopsize = size
+        try:
+            return self.chop_iterator.next()
+        except StopIteration:
+            return ''
+        
+    def close(self):
+        self.chopsize = None
+        self.chop_iterator = None
+        self.closed = True
+    
+    def flush(self):
+        pass
+
         
 class GMT:
     '''A thin wrapper to GMT command execution.
@@ -1915,7 +1980,7 @@ class GMT:
         self.gmt_config_filename = pjoin(self.tempdir, 'gmtdefaults')
         self.gen_gmt_config_file( self.gmt_config_filename, self.gmt_config )
         
-        self.output = cStringIO.StringIO()
+        self.output = StringIO()
         self.needstart = True
         self.finished = False
                 
@@ -1994,11 +2059,15 @@ class GMT:
             out_mustclose = True
             out_stream = open(out_filename, 'w')
         
-        in_mustclose = False
         if in_filename is not None:
-            in_mustclose = True
             in_stream = open(in_filename, 'r')
+            
+        if in_string is not None:
+            in_stream = StringIO(in_string)
         
+        if in_columns is not None or in_rows is not None:
+            in_stream = LineStreamChopper( TableLiner(in_columns=in_columns, in_rows=in_rows) )
+            
         # convert option arguments to strings
         for k,v in kwargs.items():
             if len(k) > 1:
@@ -2013,7 +2082,7 @@ class GMT:
                 options.append( '-%s%s' % (k,str(v)) )
        
         # if not redirecting to an external sink, handle -K -O
-        if not out_stream:
+        if out_stream is None:
             if not finish:
                 options.append('-K')
             else:
@@ -2023,7 +2092,9 @@ class GMT:
                 options.append('-O')
             else:
                 self.needstart = False
-    
+                
+            out_stream = self.output
+        
         # run the command
         args = [ pjoin(self.installation['bin'],command) ]
         if not os.path.isfile( args[0] ):
@@ -2032,42 +2103,34 @@ class GMT:
         args.extend( addargs )
         if not suppressdefaults:
             args.append( '+'+gmt_config_filename )
+            
+        bs = 4096
         p = subprocess.Popen( args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, env=self.environ )
-        toproc = p.stdin
+        while True:
+            cr, cw, cx = select( [p.stdout], [p.stdin], [] )
+            if cr:
+                out_stream.write(p.stdout.read(bs))
+            if cw:
+                if in_stream is not None:
+                    data = in_stream.read(bs)
+                    if len(data)==0: break
+                    p.stdin.write(data)
+                else:
+                    break
+            if not cr and not cw:
+                break
         
-        # feed data to gmt process
-        if in_stream is not None:
-            toproc.write( in_stream.read() )
         
-        if in_string is not None:
-            toproc.write( in_string )
-        
-        if in_columns is not None:
-            for row in izip(*in_columns):
-                toproc.write(' '.join([str(x) for x in row]))
-                toproc.write('\n')
-            
-        if in_rows is not None:
-            for row in in_rows:
-                toproc.write(' '.join([str(x) for x in row]))
-                toproc.write('\n')
-            
-        toproc.close()
-        
-        # gather output from gmt process
-        if not out_stream:
-            self.output.write( p.stdout.read() )
-        else:
-            out_stream.write( p.stdout.read() )
-        
-        # cleanup
-        if in_mustclose:
-            in_stream.close()
-        
-        if out_mustclose:
-            out_stream.close()
+        p.stdin.close()
+                
+        out_stream.write(p.stdout.read())
+        p.stdout.close()
  
         retcode = p.wait()
+        
+        if in_stream is not None: in_stream.close()
+        if out_mustclose: out_stream.close()
+
         if retcode != 0: 
             raise Exception('Command %s returned an error. While executing command:\n%s' % (command, str(args)) )
         
@@ -2370,6 +2433,7 @@ class Simple:
         self.symbols_x = []
 
         self.default_config = {
+            'type': 'linlin',
             'width': 15.*cm,
             'height': 15.*cm / golden_ratio,
             'margins': (2.*cm, 2.*cm, 2.*cm, 2.*cm),
@@ -2394,16 +2458,20 @@ class Simple:
         w = conf.pop('width')
         h = conf.pop('height')
         margins = conf.pop('margins')
-            
+        plottype = conf.pop('type') 
+           
         gmt = GMT( config={ 'PAPER_MEDIA':'Custom_%ix%i' % (w,h), } ) 
         
         layout = gmt.default_layout()
         widget = layout.get_widget()
-        
+        if plottype == 'loglin':
+            widget['J'] = '-JX%(width)gpl/%(height)gp' 
+
         axes = [ simpleconf_to_ax(conf,x) for x in 'xy' ]
         scaler = ScaleGuru( self.data, axes=axes )
         
         gmt.psbasemap( *(widget.JXY() + scaler.RB(ax_projection=True)) )
+
         
         scaler_x = copy.deepcopy(scaler)
         scaler_x.data_ranges[1] = (0.,1.)
