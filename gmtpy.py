@@ -98,6 +98,22 @@ def color(x=None):
 
     return '%i/%i/%i' % x
         
+def color_tup(x=None):
+    if x is None:
+        return tuple( [ random.randint(0,255) for _x in 'rgb' ] )
+        
+    if isinstance(x,int):
+        if 0 <= x < len(graph_colors):
+            return  graph_colors[x]
+        else:
+            return (0,0,0)
+   
+    elif isinstance(x,str):
+        if x in tango_colors:
+            return '%i/%i/%i' % tango_colors[x]
+        
+    return x
+            
 _gmt_installations = {}
 
 # Set fixed installation(s) to use...
