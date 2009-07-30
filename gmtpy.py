@@ -2445,63 +2445,207 @@ class Simple:
         self.symbols = []
         self.config = copy.deepcopy(simple_config)
         
+        self.density_data = []
+        self.density_cpt = []
+        
         self.data_x = []
         self.symbols_x = []
+        
+        self.data_y = []
+        self.symbols_y = []
+        
+        self.default_config = {}
+        self.set_defaults(width= 15.*cm,
+                          height=15.*cm / golden_ratio,
+                          margins= (2.*cm, 2.*cm, 2.*cm, 2.*cm) )
+                          
+        self.setup_defaults()
+        
+    def setup_defaults(self):
+        pass
 
-        self.default_config = {
-            'type': 'linlin',
-            'width': 15.*cm,
-            'height': 15.*cm / golden_ratio,
-            'margins': (2.*cm, 2.*cm, 2.*cm, 2.*cm),
-        }
+    def set_defaults(self, **kwargs):
+        self.default_config.update(kwargs)
         
     def plot(self, data, symbol=''):
         self.data.append(data)
         self.symbols.append(symbol)
         
+    def density_plot(self, data, cpt='ocean'):
+        self.density_data.append(data)
+        self.density_cpt.append(cpt)
+        
     def plot_x(self, data, symbol=''):
         self.data_x.append(data)
         self.symbols_x.append(symbol)
+        
+    def plot_y(self, data, symbol=''):
+        self.data_y.append(data)
+        self.symbols_y.append(symbol)
 
     def set(self, **kwargs):
         self.config.update(kwargs)
+    
+    def setup_base(self, conf):
+        w = conf.pop('width')
+        h = conf.pop('height')
+        margins = conf.pop('margins')
+        
+        gmt = GMT( config={ 'PAPER_MEDIA':'Custom_%ix%i' % (w,h), } ) 
+        layout = gmt.default_layout()
+        widget = layout.get_widget()
+        
+        return gmt, layout, widget
+   
+    def setup_projection(self, widget, conf):
+        pass
+
+    def setup_scaling(self, conf):
+        ndims = 2
+        if self.density_data:
+            ndims = 3
+        
+        axes = [ simpleconf_to_ax(conf,x) for x in 'xyz'[:ndims] ]
+        
+        data_chopped = [ ds[:ndims] for ds in (self.data+self.density_data) ]
+        
+        scaler = ScaleGuru( data_chopped, axes=axes[:ndims] )
+        
+        self.setup_scaling_plus(scaler, axes[:ndims])
+        
+        return scaler
+        
+    def setup_scaling_plus(self, scaler, axes):
+        pass
+        
+    def setup_scaling_extra(self, scaler, conf):
+        
+        scaler_x = copy.deepcopy(scaler)
+        scaler_x.data_ranges[1] = (0.,1.)
+        scaler_x.axes[1].mode = 'off'
+        
+        scaler_y = copy.deepcopy(scaler)
+        scaler_y.data_ranges[0] = (0.,1.)
+        scaler_y.axes[0].mode = 'off'
+        
+        return scaler_x, scaler_y
+   
+    def draw_density(self, gmt, widget, scaler):
+        
+        R = scaler.R()
+        par = scaler.get_params()
+        rxyj = R + widget.XYJ()
+        
+        for dat, cpt in zip(self.density_data, self.density_cpt):
+            
+            inc_interpol = (10.,#0.1*(par['xmax']-par['xmin'])/math.sqrt(len(dat[0])),
+                            0.1*(par['ymax']-par['ymin'])/math.sqrt(len(dat[0])))
+        
+            fn_cpt = gmt.tempfilename()
+            gmt.makecpt( C=cpt, out_filename=fn_cpt, *scaler.T() )
+            
+            fn_grid =  gmt.tempfilename()
+            gmt.surface( 
+                in_columns=dat, 
+                T=1,
+                G=fn_grid, 
+                I=inc_interpol, 
+                out_discard=True, 
+                *R )
+                
+            gmt.grdimage( 
+                fn_grid,
+                C=fn_cpt,
+                *rxyj )
+                
+            gmt.grdcontour( 
+                fn_grid,
+                C=fn_cpt,
+                W='2p,black',
+                 *rxyj )
+                
+            os.remove(fn_grid)
+            os.remove(fn_cpt)
+   
+    def draw(self, gmt, widget, scaler):
+        
+        gmt.psbasemap( *(widget.JXY() + scaler.RB(ax_projection=True)) )
+
+        rxyj = scaler.R() + widget.JXY()
+        for dat, sym in zip(self.data,self.symbols):
+            gmt.psxy( in_columns=dat, *(sym.split()+rxyj) )
+        
+
+    def draw_extra(self, gmt, widget, scaler_x, scaler_y):
+        
+        for dat, sym in zip(self.data_x,self.symbols_x):
+            gmt.psxy( in_columns=dat, *(sym.split() + scaler_x.R() + widget.JXY()) )
+            
+        for dat, sym in zip(self.data_y,self.symbols_y):
+            gmt.psxy( in_columns=dat, *(sym.split() + scaler_y.R() + widget.JXY()) )
     
     def save(self, filename):
 
         conf = dict(self.default_config)
         conf.update(self.config)
         
-        w = conf.pop('width')
-        h = conf.pop('height')
-        margins = conf.pop('margins')
-        plottype = conf.pop('type') 
-           
-        gmt = GMT( config={ 'PAPER_MEDIA':'Custom_%ix%i' % (w,h), } ) 
+        gmt, layout, widget = self.setup_base(conf)
+        self.setup_projection(widget, conf)
+        scaler = self.setup_scaling(conf)
+        scaler_x, scaler_y = self.setup_scaling_extra(scaler, conf)
         
-        layout = gmt.default_layout()
-        widget = layout.get_widget()
-        if plottype == 'loglin':
-            widget['J'] = '-JX%(width)gpl/%(height)gp' 
-
-        axes = [ simpleconf_to_ax(conf,x) for x in 'xy' ]
-        scaler = ScaleGuru( self.data, axes=axes )
+        aspect = aspect_for_projection( *(widget.J() + scaler.R()) )
+        widget.set_aspect(aspect)
         
-        gmt.psbasemap( *(widget.JXY() + scaler.RB(ax_projection=True)) )
-
-        
-        scaler_x = copy.deepcopy(scaler)
-        scaler_x.data_ranges[1] = (0.,1.)
-        scaler_x.axes[1].mode = 'off'
-        for dat, sym in zip(self.data_x,self.symbols_x):
-            gmt.psxy( in_columns=dat, *(sym.split() + scaler_x.R() + widget.JXY()) )
-        
-        rxyj = scaler.R() + widget.JXY()
-        for dat, sym in zip(self.data,self.symbols):
-            gmt.psxy( in_columns=dat, *(sym.split()+rxyj) )
-            
-        
+        self.draw_density(gmt, widget, scaler)
+        self.draw(gmt, widget, scaler)
+        self.draw_extra(gmt, widget, scaler_x, scaler_y)
 
         gmt.save(filename)
+        
+class LinLinPlot(Simple):
+    pass
+    
+class LogLinPlot(Simple):
+    
+    def setup_defaults(self):
+        self.set_defaults( xmode='min-max' )
+    
+    def setup_projection(self, widget, conf):
+        widget['J'] = '-JX%(width)gpl/%(height)gp'
+        
+class LinLogPlot(Simple):
+    
+    def setup_defaults(self):
+        self.set_defaults( ymode='min-max' )
+    
+    def setup_projection(self, widget, conf):
+        widget['J'] = '-JX%(width)gp/%(height)gpl' 
+
+class LogLogPlot(Simple):
+    
+    def setup_defaults(self):
+        self.set_defaults( mode='min-max' )
+    
+    def setup_projection(self, widget, conf):
+        widget['J'] = '-JX%(width)gpl/%(height)gpl'
+        
+class AziDistPlot(Simple):
+    
+    def setup_defaults(self):
+        self.set_defaults(
+            height=15.*cm, 
+            width=15.*cm,
+            xmode='off',
+            xlimits=(0.,360.),
+            xinc=45.)
+    
+    def setup_projection(self, widget, conf):
+        widget['J'] = '-JPa%(width)gp'
+        
+    def setup_scaling_plus(self, scaler, axes):
+        scaler['B'] = '-B%(xinc)g:%(xlabel)s:/%(yinc)g:%(ylabel)s:WseN'
+        
 
 
 def nice_palette(gmt, widget, scaleguru, cptfile, zlabeloffset=0.8*inch, innerticks=True):
