@@ -1067,7 +1067,8 @@ class ScaleGuru(Guru):
         
         # sophisticated data-range calculation
         data_ranges = [None] * maxdim
-        for dt in data_tuples:
+        for dt_ in data_tuples:
+            dt = num.asarray(dt_)
             in_range = True
             for ax,x in zip(self.axes, dt):
                 if ax.limits:
@@ -2439,14 +2440,21 @@ def simpleconf_to_ax(conf, axname):
             
     return Ax( **c )
 
+class DensityPlotDef:
+    def __init__(self, data, cpt='ocean', tension=0.7, size=(640,480), contour=False):
+        self.data = data
+        self.cpt = cpt
+        self.tension = tension
+        self.size = size
+        self.contour = contour
+
 class Simple:
     def __init__(self, **simple_config):
         self.data = []
         self.symbols = []
         self.config = copy.deepcopy(simple_config)
         
-        self.density_data = []
-        self.density_cpt = []
+        self.density_plot_defs = []
         
         self.data_x = []
         self.symbols_x = []
@@ -2457,7 +2465,12 @@ class Simple:
         self.default_config = {}
         self.set_defaults(width= 15.*cm,
                           height=15.*cm / golden_ratio,
-                          margins= (2.*cm, 2.*cm, 2.*cm, 2.*cm) )
+                          margins= (2.*cm, 2.*cm, 2.*cm, 2.*cm),
+                          with_palette=False,
+                          palette_offset=0.5*cm,
+                          palette_width=None,
+                          palette_height=None,
+                          draw_layout=False)
                           
         self.setup_defaults()
         
@@ -2471,9 +2484,9 @@ class Simple:
         self.data.append(data)
         self.symbols.append(symbol)
         
-    def density_plot(self, data, cpt='ocean'):
-        self.density_data.append(data)
-        self.density_cpt.append(cpt)
+    def density_plot(self, data, **kwargs):
+        dpd = DensityPlotDef( data, **kwargs )
+        self.density_plot_defs.append(dpd)
         
     def plot_x(self, data, symbol=''):
         self.data_x.append(data)
@@ -2492,22 +2505,36 @@ class Simple:
         margins = conf.pop('margins')
         
         gmt = GMT( config={ 'PAPER_MEDIA':'Custom_%ix%i' % (w,h), } ) 
-        layout = gmt.default_layout()
-        widget = layout.get_widget()
-        
-        return gmt, layout, widget
+        layout = gmt.default_layout(with_palette=conf['with_palette'])
+        if conf['with_palette']:
+            widget = layout.get_widget().get_widget(0,0)
+            spacer = layout.get_widget().get_widget(1,0)
+            spacer.set_horizontal(conf['palette_offset'])
+            palette_widget = layout.get_widget().get_widget(2,0)
+            if conf['palette_width'] is not None:
+                palette_widget.set_horizontal(conf['palette_width'])
+            if conf['palette_height'] is not None:
+                palette_widget.set_vertical(conf['palette_height'])
+            return gmt, layout, widget, palette_widget
+        else:
+            widget = layout.get_widget()
+            return gmt, layout, widget, None
    
-    def setup_projection(self, widget, conf):
+    def setup_projection(self, widget, scaler, conf):
         pass
 
     def setup_scaling(self, conf):
         ndims = 2
-        if self.density_data:
+        if self.density_plot_defs:
             ndims = 3
         
         axes = [ simpleconf_to_ax(conf,x) for x in 'xyz'[:ndims] ]
         
-        data_chopped = [ ds[:ndims] for ds in (self.data+self.density_data) ]
+        data_all = []
+        data_all.extend(self.data)
+        for dsd in self.density_plot_defs:
+            data_all.append(dsd.data)
+        data_chopped = [ ds[:ndims] for ds in data_all ]
         
         scaler = ScaleGuru( data_chopped, axes=axes[:ndims] )
         
@@ -2536,36 +2563,25 @@ class Simple:
         par = scaler.get_params()
         rxyj = R + widget.XYJ()
         
-        for dat, cpt in zip(self.density_data, self.density_cpt):
+        for dpd in self.density_plot_defs:
             
-            inc_interpol = (10.,#0.1*(par['xmax']-par['xmin'])/math.sqrt(len(dat[0])),
-                            0.1*(par['ymax']-par['ymin'])/math.sqrt(len(dat[0])))
-        
             fn_cpt = gmt.tempfilename()
-            gmt.makecpt( C=cpt, out_filename=fn_cpt, *scaler.T() )
+            gmt.makecpt( C=dpd.cpt, out_filename=fn_cpt, *scaler.T() )
             
             fn_grid =  gmt.tempfilename()
-            gmt.surface( 
-                in_columns=dat, 
-                T=1,
-                G=fn_grid, 
-                I=inc_interpol, 
-                out_discard=True, 
-                *R )
-                
-            gmt.grdimage( 
-                fn_grid,
-                C=fn_cpt,
-                *rxyj )
-                
-            gmt.grdcontour( 
-                fn_grid,
-                C=fn_cpt,
-                W='2p,black',
-                 *rxyj )
+            gmt.surface( in_columns=dpd.data,  T=dpd.tension, 
+                         G=fn_grid, I='%i+/%i+' % dpd.size,
+                         out_discard=True,  *R )
+            
+            gmt.grdimage( fn_grid, C=fn_cpt, *rxyj )
+            
+            if dpd.contour:    
+                gmt.grdcontour( fn_grid,  C=fn_cpt, W='2p,black', E='i', *rxyj )
                 
             os.remove(fn_grid)
-            os.remove(fn_cpt)
+        
+        return fn_cpt
+        
    
     def draw(self, gmt, widget, scaler):
         
@@ -2589,18 +2605,21 @@ class Simple:
         conf = dict(self.default_config)
         conf.update(self.config)
         
-        gmt, layout, widget = self.setup_base(conf)
-        self.setup_projection(widget, conf)
+        gmt, layout, widget, palette_widget = self.setup_base(conf)
         scaler = self.setup_scaling(conf)
         scaler_x, scaler_y = self.setup_scaling_extra(scaler, conf)
-        
+
+        self.setup_projection(widget, scaler, conf)        
         aspect = aspect_for_projection( *(widget.J() + scaler.R()) )
         widget.set_aspect(aspect)
-        
-        self.draw_density(gmt, widget, scaler)
+        if conf['draw_layout']:
+            gmt.draw_layout(layout)
+        cptfile = self.draw_density(gmt, widget, scaler)
         self.draw(gmt, widget, scaler)
         self.draw_extra(gmt, widget, scaler_x, scaler_y)
-
+        if palette_widget:
+            nice_palette(gmt, palette_widget, scaler, cptfile)
+ 
         gmt.save(filename)
         
 class LinLinPlot(Simple):
@@ -2611,7 +2630,7 @@ class LogLinPlot(Simple):
     def setup_defaults(self):
         self.set_defaults( xmode='min-max' )
     
-    def setup_projection(self, widget, conf):
+    def setup_projection(self, widget, scaler, conf):
         widget['J'] = '-JX%(width)gpl/%(height)gp'
         
 class LinLogPlot(Simple):
@@ -2619,7 +2638,7 @@ class LinLogPlot(Simple):
     def setup_defaults(self):
         self.set_defaults( ymode='min-max' )
     
-    def setup_projection(self, widget, conf):
+    def setup_projection(self, widget, scaler, conf):
         widget['J'] = '-JX%(width)gp/%(height)gpl' 
 
 class LogLogPlot(Simple):
@@ -2627,7 +2646,7 @@ class LogLogPlot(Simple):
     def setup_defaults(self):
         self.set_defaults( mode='min-max' )
     
-    def setup_projection(self, widget, conf):
+    def setup_projection(self, widget, scaler, conf):
         widget['J'] = '-JX%(width)gpl/%(height)gpl'
         
 class AziDistPlot(Simple):
@@ -2640,12 +2659,24 @@ class AziDistPlot(Simple):
             xlimits=(0.,360.),
             xinc=45.)
     
-    def setup_projection(self, widget, conf):
+    def setup_projection(self, widget, scaler, conf):
         widget['J'] = '-JPa%(width)gp'
         
     def setup_scaling_plus(self, scaler, axes):
         scaler['B'] = '-B%(xinc)g:%(xlabel)s:/%(yinc)g:%(ylabel)s:WseN'
         
+class MPlot(Simple):
+
+    def setup_defaults(self):
+        self.set_defaults(xmode='min-max', ymode='min-max')
+
+    def setup_projection(self, widget, scaler, conf):
+        par = scaler.get_params()
+        lon0 = (par['xmin'] + par['xmax'])/2.
+        lat0 = (par['ymin'] + par['ymax'])/2.
+        sll = '%g/%g' % (lon0,lat0)
+        print sll
+        widget['J'] = '-JM' + sll + '/%(width)gp'
 
 
 def nice_palette(gmt, widget, scaleguru, cptfile, zlabeloffset=0.8*inch, innerticks=True):
