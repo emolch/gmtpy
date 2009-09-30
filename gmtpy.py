@@ -32,6 +32,14 @@ import numpy as num
 import copy
 from select import select
 
+def import_pycdf():
+    try:
+        import pycdf as cdf
+    except ImportError:
+        raise ImportError,"Module pycdf is required to handle GMT grd files."
+    return cdf 
+
+
 golden_ratio   = 1.61803
 
 # units in points
@@ -658,7 +666,187 @@ def gmtdefaults_as_text(version='newest'):
         
     return _gmt_defaults_by_version[version]
     
+def savegrd(x,y,z, filename, title=None, naming='xy'):
+    '''Write COARDS compliant netcdf (grd) file.'''
+    
+    cdf = import_pycdf()
 
+    assert y.size, x.size == z.shape
+    ny, nx = z.shape
+    nc = cdf.CDF(filename, cdf.NC.WRITE|cdf.NC.CREATE|cdf.NC.TRUNC)
+    assert naming in ('xy', 'lonlat')
+    
+    if naming == 'xy':
+        kx, ky = 'x', 'y'
+    else:
+        kx, ky = 'lon', 'lat'
+        
+    nc.definemode()
+    nc.node_offset = 0
+    if title is not None: nc.title = title
+    nc.Conventions = 'COARDS/CF-1.0'
+    xdim = nc.def_dim(kx, nx)
+    ydim = nc.def_dim(ky, ny)
+    xvar = nc.def_var(kx, cdf.NC.FLOAT, dimids=[kx])
+    yvar = nc.def_var(ky, cdf.NC.FLOAT, dimids=[ky])
+    if naming == 'xy':
+        xvar.long_name = kx
+        yvar.long_name = ky
+    else:
+        xvar.long_name = 'longitude'
+        xvar.units = 'degrees_east'
+        yvar.long_name = 'latitude'
+        yvar.units = 'degrees_north'
+        
+    xactual_range = xvar.attr('actual_range')
+    xactual_range.put(cdf.NC.FLOAT, (x.min(), x.max()))
+    
+    yactual_range = yvar.attr('actual_range')
+    yactual_range.put(cdf.NC.FLOAT, (y.min(), y.max()))
+        
+    zvar = nc.def_var('z', cdf.NC.FLOAT, dimids=[ky, kx])
+    
+    nc.datamode()
+    xvar.put(x.astype(num.float32))
+    yvar.put(y.astype(num.float32))
+    zvar.put(z.astype(num.float32))
+
+    nc.close()
+
+def loadgrd(filename):
+    '''Read COARDS compliant netcdf (grd) file.'''
+    
+    cdf = import_pycdf()
+    
+    nc = cdf.CDF(filename, cdf.NC.NOWRITE)
+    vkeys = nc.variables().keys()
+    kx = 'x'
+    ky = 'y'
+    if 'lon' in vkeys: kx = 'lon'
+    if 'lat' in vkeys: ky = 'lat'
+    x = nc.var(kx).get()
+    y = nc.var(ky).get()
+
+    z = nc.var('z').get()
+    nc.close()
+    return x,y,z
+    
+
+def centers_to_edges(asorted):
+    return (asorted[1:] + asorted[:-1])/2.
+
+def nvals(asorted):
+    eps = (asorted[-1]-asorted[0])/asorted.size
+    return num.sum( asorted[1:] - asorted[:-1] >= eps)+1
+    
+def guess_vals(asorted):
+    eps = (asorted[-1]-asorted[0])/asorted.size
+    indis = num.nonzero( asorted[1:] - asorted[:-1] >= eps)[0]
+    indis = num.concatenate( (num.array([0]), indis+1, num.array([asorted.size])) )
+    asum = num.zeros(asorted.size+1)
+    asum[1:] = num.cumsum( asorted )
+    return (asum[indis[1:]] - asum[indis[:-1]]) / (indis[1:]-indis[:-1])
+
+def blockmean(asorted,b):
+    indis = num.nonzero( asorted[1:] - asorted[:-1])[0]
+    indis = num.concatenate( (num.array([0]), indis+1, num.array([asorted.size])) )
+    bsum = num.zeros(b.size+1)
+    bsum[1:] = num.cumsum( b )
+    return asorted[indis[:-1]], (bsum[indis[1:]] - bsum[indis[:-1]]) / (indis[1:]-indis[:-1])
+
+def griddata_regular(x,y,z, xvals, yvals):
+    nx, ny = xvals.size, yvals.size
+    xindi = num.digitize(x, centers_to_edges(xvals))
+    yindi = num.digitize(y, centers_to_edges(yvals))
+    
+    zindi = yindi*nx+xindi
+    order = num.argsort(zindi)
+    z = z[order]
+    zindi = zindi[order]
+    
+    zindi, z = blockmean(zindi, z)
+    znew = num.empty(nx*ny, dtype=num.float)
+    znew[:] = num.nan
+    znew[zindi] = z
+    return znew.reshape(ny,nx)
+    
+
+def guess_field_size(x_sorted,y_sorted,z=None):
+    critical_fraction = 1./num.e - 0.014*3
+    xs = x_sorted
+    ys = y_sorted
+    nxs, nys = nvals(xs), nvals(ys)
+    if xs.size == nxs*nys:     # exact match 
+        return nxs, nys, 0
+    elif nxs >= xs.size*critical_fraction and nys >= xs.size*critical_fraction :    # possibly randomly sampled
+        nxs = int(math.sqrt(x.size))
+        nys = nxs
+        return nxs, nys, 2
+    else:
+        return nxs, nys, 1
+    
+def griddata_auto(x,y,z):
+    '''Grid tabular XYZ data by binning.
+    
+    This function does some extra work to guess the size of the grid. This
+    should work fine if the input values are already defined on an rectilinear
+    grid, even if data points are missing or duplicated. This routine also tries
+    to detect a random distribution of input data and in that case creates a
+    grid of size sqrt(N) x sqrt(N).
+    
+    The points do not have to be given in any particular order. Grid nodes 
+    without data are assigned the NaN value. If multiple data points map to the
+    same grid node, their average is assigned to the grid node.
+    '''
+    
+    x, y, z = [ num.asarray(X) for X in (x,y,z) ]
+    assert x.size == y.size == z.size
+    xs, ys = num.sort(x),num.sort(y)
+    nx, ny, badness = guess_field_size(xs,ys,z)
+    if badness <= 1:
+        xf = guess_vals(xs)
+        yf = guess_vals(ys)
+        zf = griddata_regular( x,y,z, xf, yf )
+    else:
+        xf = num.linspace( xs[0],xs[-1], nx)
+        yf = num.linspace( ys[0],ys[-1], ny)
+        zf = griddata_regular( x,y,z, xf, yf )
+    
+    return xf, yf, zf
+    
+def tabledata(xf,yf,zf):
+    assert yf.size, xf.size == zf.shape
+    x = num.tile(xf, yf.size)
+    y = num.repeat(yf, xf.size)
+    z = zf.flatten()
+    return x,y,z
+    
+def double1d(a):
+    a2 = num.empty(a.size*2-1)
+    a2[::2] = a
+    a2[1::2] = (a[:-1] + a[1:])/2.
+    return a2
+
+def double2d(f):
+    f2 = num.empty((f.shape[0]*2-1, f.shape[1]*2-1))
+    f2[:,:] = num.nan
+    f2[::2,::2] = f
+    f2[1::2,::2] = (f[:-1,:] + f[1:,:])/2.
+    f2[::2,1::2] = (f[:,:-1] + f[:,1:])/2.
+    f2[1::2,1::2] = (f[:-1,:-1] + f[1:,:-1] + f[:-1,1:] + f[1:,1:])/4.
+    diag = f2[1::2,1::2]
+    diagA = (f[:-1,:-1] + f[1:,1:]) / 2.
+    diagB = (f[1:,:-1] + f[:-1,1:]) / 2.
+    f2[1::2,1::2] = num.where(num.isnan(diag),diagA,diag)
+    f2[1::2,1::2] = num.where(num.isnan(diag),diagB,diag)
+    return f2
+    
+def doublegrid(x,y,z):
+    x2 = double1d(x)
+    y2 = double1d(y)
+    z2 = double2d(z)
+    return x2,y2,z2
+    
 
 class Guru:
     '''Abstract base class providing template interpolation, accessible as attributes.
@@ -1062,9 +1250,7 @@ class ScaleGuru(Guru):
             self.axes = axes
         else:
             self.axes = [ Ax() for i in range(maxdim) ]
-        
-        self.data_tuples = data_tuples
-        
+                
         # sophisticated data-range calculation
         data_ranges = [None] * maxdim
         for dt_ in data_tuples:
@@ -1656,11 +1842,11 @@ class FrameLayout(Widget):
         # prevent widgets from collapsing
         for s,g in ((sl,gl),(sr,gr),(sc,gc)):
             if s[0]==0.0 and g[0]!=0.0:
-                shsum += 1.*cm
+                shsum += 0.1*cm
         
         for s,g in ((st,gt),(sb,gb),(sc,gc)):
             if s[1]==0.0 and g[1]!=0.0:
-                svsum += 1.*cm
+                svsum += 0.1*cm
         
         sh = max(shs, shsum)
         sv = max(svs, svsum)
@@ -1977,7 +2163,7 @@ class GMT:
     '''
     
 
-    def __init__(self, config=None, version='newest' ):
+    def __init__(self, config=None, kontinue=None, version='newest'):
         
         '''Create a new GMT instance.
          
@@ -1998,7 +2184,14 @@ class GMT:
         self.gen_gmt_config_file( self.gmt_config_filename, self.gmt_config )
         
         self.output = StringIO()
-        self.needstart = True
+        if kontinue is not None:
+            inp = open(kontinue, 'r')
+            self.output.write(inp.read())
+            inp.close()
+            self.needstart = False
+        else:
+            self.needstart = True
+        
         self.finished = False
                 
         self.environ = os.environ.copy()
@@ -2234,14 +2427,22 @@ class GMT:
         f = open(fn, 'w')
         return f, fn
     
-    def save(self, filename=None, bbox=None):
-        '''Finish and save figure as PDF or PS file.
+    def save_unfinished(self, filename):
+        out = open(filename, 'w')
+        out.write(self.output.getvalue())
+        out.close()
+        
+    def save(self, filename=None, bbox=None, raster_dpi=150, raster_antialias=True):
+        '''Finish and save figure as PDF, PS or PPM file.
            
-           If filename ends in '.pdf' a PDF file is created by piping the 
+           If filename ends with '.pdf' a PDF file is created by piping the 
            GMT output through epstopdf.
            
-           The bounding box is set according to the margins and size specified
-           in the constructor.'''
+           If filename ends with '.ppm' a PPM file is created by running 
+           epstopdf and pdftoppm. 'raster_dpi' specifies the resolution, which
+           is passed to pdftoppm.
+           
+           The bounding box is set according to the values given in bbox.'''
         
         if not self.finished:
             self.psxy(R=True, J=True, finish=True)
@@ -2261,9 +2462,19 @@ class GMT:
         else:
             out.write(self.output.getvalue())
         
-        out.close()
+        if filename:
+            out.close()
         
-        if filename.endswith('.pdf'):
+        if filename.endswith('.ppm'):
+            pdffilename = pjoin(self.tempdir, 'incomplete.pdf')
+            subprocess.call([ 'epstopdf', '--outfile='+pdffilename, tempfn])
+            interbasefn = pjoin(self.tempdir, 'incomplete')
+            aa = ['-aa', 'no']
+            if raster_antialias:
+                aa = ['-aa', 'yes']
+            subprocess.call([ 'pdftoppm', '-r', '%i' % raster_dpi] + aa + [ pdffilename, interbasefn ])
+            shutil.move(interbasefn+'-1.ppm', filename)
+        elif filename.endswith('.pdf'):
             subprocess.call([ 'epstopdf', '--outfile='+filename, tempfn])
         else:
             shutil.move(tempfn, filename)
@@ -2435,26 +2646,36 @@ def simpleconf_to_ax(conf, axname):
     c = {}
     x = axname
     for x in ('', axname):
-        for k in ('label', 'unit', 'scaled_unit', 'scaled_unit_factor', 'space', 'mode', 'approx_ticks', 'limits', 'inc'):
+        for k in ('label', 'unit', 'scaled_unit', 'scaled_unit_factor', 'space',
+                   'mode', 'approx_ticks', 'limits', 'inc', 'snap'):
             if x+k in conf: c[k] = conf[x+k]
             
     return Ax( **c )
 
 class DensityPlotDef:
-    def __init__(self, data, cpt='ocean', tension=0.7, size=(640,480), contour=False):
+    def __init__(self, data, cpt='ocean', tension=0.7, size=(640,480), contour=False, method='surface'):
         self.data = data
         self.cpt = cpt
         self.tension = tension
         self.size = size
         self.contour = contour
+        self.method = method
+
+class TextDef:
+    def __init__(self, data, size=9, justify='MC', fontno=0):
+        self.data = data
+        self.size = size
+        self.justify = justify
+        self.fontno = fontno
 
 class Simple:
-    def __init__(self, **simple_config):
+    def __init__(self, gmtconfig=None, **simple_config):
         self.data = []
         self.symbols = []
         self.config = copy.deepcopy(simple_config)
-        
+        self.gmtconfig = gmtconfig
         self.density_plot_defs = []
+        self.text_defs = []
         
         self.data_x = []
         self.symbols_x = []
@@ -2470,6 +2691,7 @@ class Simple:
                           palette_offset=0.5*cm,
                           palette_width=None,
                           palette_height=None,
+                          zlabeloffset=2*cm,
                           draw_layout=False)
                           
         self.setup_defaults()
@@ -2488,6 +2710,10 @@ class Simple:
         dpd = DensityPlotDef( data, **kwargs )
         self.density_plot_defs.append(dpd)
         
+    def text(self, data, **kwargs):
+        dpd = TextDef( data, **kwargs )
+        self.text_defs.append(dpd)
+        
     def plot_x(self, data, symbol=''):
         self.data_x.append(data)
         self.symbols_x.append(symbol)
@@ -2504,8 +2730,12 @@ class Simple:
         h = conf.pop('height')
         margins = conf.pop('margins')
         
-        gmt = GMT( config={ 'PAPER_MEDIA':'Custom_%ix%i' % (w,h), } ) 
+        gmtconfig = { 'PAPER_MEDIA':'Custom_%ix%i' % (w,h), }
+        if self.gmtconfig is not None:
+            gmtconfig.update( self.gmtconfig )
+        gmt = GMT( config=gmtconfig ) 
         layout = gmt.default_layout(with_palette=conf['with_palette'])
+        layout.set_min_margins(*margins)
         if conf['with_palette']:
             widget = layout.get_widget().get_widget(0,0)
             spacer = layout.get_widget().get_widget(1,0)
@@ -2515,6 +2745,7 @@ class Simple:
                 palette_widget.set_horizontal(conf['palette_width'])
             if conf['palette_height'] is not None:
                 palette_widget.set_vertical(conf['palette_height'])
+                widget.set_vertical(h-margins[2]-margins[3]-0.03*cm)
             return gmt, layout, widget, palette_widget
         else:
             widget = layout.get_widget()
@@ -2562,35 +2793,55 @@ class Simple:
         R = scaler.R()
         par = scaler.get_params()
         rxyj = R + widget.XYJ()
-        
+        innerticks = False
         for dpd in self.density_plot_defs:
             
             fn_cpt = gmt.tempfilename()
+            
             gmt.makecpt( C=dpd.cpt, out_filename=fn_cpt, *scaler.T() )
             
             fn_grid =  gmt.tempfilename()
-            gmt.surface( in_columns=dpd.data,  T=dpd.tension, 
-                         G=fn_grid, I='%i+/%i+' % dpd.size,
-                         out_discard=True,  *R )
             
-            gmt.grdimage( fn_grid, C=fn_cpt, *rxyj )
+            fn_mean = gmt.tempfilename()
             
-            if dpd.contour:    
-                gmt.grdcontour( fn_grid,  C=fn_cpt, W='2p,black', E='i', *rxyj )
+            if dpd.method in ('surface', 'triangulate'):
+                gmt.blockmean( in_columns=dpd.data, I='%i+/%i+' % dpd.size,
+                            out_filename=fn_mean,  *R )
                 
-            os.remove(fn_grid)
+                if dpd.method == 'surface':
+                    gmt.surface( in_filename=fn_mean,  T=dpd.tension, 
+                            G=fn_grid, I='%i+/%i+' % dpd.size,
+                            out_discard=True,  *R )
+                            
+                if dpd.method == 'triangulate':
+                    gmt.triangulate( in_filename=fn_mean, G=fn_grid, I='%i+/%i+' % dpd.size,
+                                out_discard=True,  *R )
+                
+                gmt.grdimage( fn_grid, C=fn_cpt, E='i', S='l', *rxyj )
+
+                if dpd.contour:
+                    gmt.grdcontour( fn_grid,  C=fn_cpt, W='0.5p,black', *rxyj )
+                    innerticks = '0.5p,black'
+                    
+                os.remove(fn_grid)
+                os.remove(fn_mean)
+
+            if dpd.method == 'fillcontour':
+                gmt.pscontour( in_columns=dpd.data, C=fn_cpt, I=True, *rxyj )
+            
+            
+        return fn_cpt, innerticks
         
-        return fn_cpt
-        
+    def draw_basemap(self, gmt, widget, scaler ):
+        gmt.psbasemap( *(widget.JXY() + scaler.RB(ax_projection=True)) )
    
     def draw(self, gmt, widget, scaler):
-        
-        gmt.psbasemap( *(widget.JXY() + scaler.RB(ax_projection=True)) )
-
         rxyj = scaler.R() + widget.JXY()
         for dat, sym in zip(self.data,self.symbols):
             gmt.psxy( in_columns=dat, *(sym.split()+rxyj) )
         
+    def post_draw(self, gmt, widget, scaler):
+        pass
 
     def draw_extra(self, gmt, widget, scaler_x, scaler_y):
         
@@ -2599,6 +2850,18 @@ class Simple:
             
         for dat, sym in zip(self.data_y,self.symbols_y):
             gmt.psxy( in_columns=dat, *(sym.split() + scaler_y.R() + widget.JXY()) )
+    
+    def draw_text(self, gmt, widget, scaler):
+        
+        rxyj = scaler.R() + widget.JXY()
+        for td in self.text_defs:
+            x,y = td.data[0:2]
+            text = td.data[-1]
+            size = td.size
+            angle = 0
+            fontno = td.fontno
+            justify = td.justify
+            gmt.pstext( in_rows=[(x,y,size,angle,fontno,justify,text)], *rxyj )
     
     def save(self, filename):
 
@@ -2614,11 +2877,17 @@ class Simple:
         widget.set_aspect(aspect)
         if conf['draw_layout']:
             gmt.draw_layout(layout)
-        cptfile = self.draw_density(gmt, widget, scaler)
+        cptfile = None
+        if self.density_plot_defs:
+            cptfile, innerticks = self.draw_density(gmt, widget, scaler)
         self.draw(gmt, widget, scaler)
+        self.post_draw(gmt, widget, scaler)
         self.draw_extra(gmt, widget, scaler_x, scaler_y)
-        if palette_widget:
-            nice_palette(gmt, palette_widget, scaler, cptfile)
+        self.draw_text(gmt, widget, scaler)
+        self.draw_basemap(gmt, widget, scaler)
+
+        if palette_widget and cptfile:
+            nice_palette(gmt, palette_widget, scaler, cptfile, innerticks=innerticks, zlabeloffset=conf['zlabeloffset'])
  
         gmt.save(filename)
         
@@ -2632,6 +2901,7 @@ class LogLinPlot(Simple):
     
     def setup_projection(self, widget, scaler, conf):
         widget['J'] = '-JX%(width)gpl/%(height)gp'
+        scaler['B'] = '-B2:%(xlabel)s:/%(yinc)g:%(ylabel)s:WSen'
         
 class LinLogPlot(Simple):
     
@@ -2640,6 +2910,7 @@ class LinLogPlot(Simple):
     
     def setup_projection(self, widget, scaler, conf):
         widget['J'] = '-JX%(width)gp/%(height)gpl' 
+        scaler['B'] = '-B%(xinc)g:%(xlabel)s:/2:%(ylabel)s:WSen'
 
 class LogLogPlot(Simple):
     
@@ -2648,6 +2919,7 @@ class LogLogPlot(Simple):
     
     def setup_projection(self, widget, scaler, conf):
         widget['J'] = '-JX%(width)gpl/%(height)gpl'
+        scaler['B'] = '-B2:%(xlabel)s:/2:%(ylabel)s:WSen'
         
 class AziDistPlot(Simple):
     
@@ -2663,7 +2935,7 @@ class AziDistPlot(Simple):
         widget['J'] = '-JPa%(width)gp'
         
     def setup_scaling_plus(self, scaler, axes):
-        scaler['B'] = '-B%(xinc)g:%(xlabel)s:/%(yinc)g:%(ylabel)s:WseN'
+        scaler['B'] = '-B%(xinc)g:%(xlabel)s:/%(yinc)g:%(ylabel)s:N'
         
 class MPlot(Simple):
 
@@ -2683,7 +2955,7 @@ def nice_palette(gmt, widget, scaleguru, cptfile, zlabeloffset=0.8*inch, innerti
 
     par = scaleguru.get_params()
     par_ax = scaleguru.get_params(ax_projection=True)
-    nz_palette = int(widget.height()/inch * 50)
+    nz_palette = int(widget.height()/inch * 300)
     px = num.zeros(nz_palette*2)
     px[1::2] += 1
     pz = num.linspace(par['zmin'],par['zmax'],nz_palette).repeat(2)
@@ -2693,17 +2965,26 @@ def nice_palette(gmt, widget, scaleguru, cptfile, zlabeloffset=0.8*inch, innerti
     pal_ax_r = (0,1,par_ax['zmin'],par_ax['zmax'])
     gmt.xyz2grd( G=palgrdfile, R=pal_r, I=(1,pdz), in_columns=(px,pz,pz), out_discard=True)
     gmt.grdimage( palgrdfile, R=pal_r, C=cptfile, *widget.JXY() )
+    if isinstance(innerticks, str):
+        tickpen = innerticks
+        gmt.grdcontour( palgrdfile, W=tickpen, R=pal_r, C=cptfile, *widget.JXY() )
     negpalwid = '%gp' % -widget.width()
-    if innerticks:
+    if not isinstance(innerticks,str) and innerticks:
         ticklen = negpalwid
     else:
         ticklen = '0p'
     gmt.psbasemap( R=pal_ax_r, B='4::/%(zinc)g::nsw' % par_ax, config={ 'TICK_LENGTH': ticklen }, *widget.JXY() )
-    gmt.psbasemap( R=pal_ax_r, B='4::/%(zinc)g::E' % par_ax, *widget.JXY())
+    if innerticks:
+        gmt.psbasemap( R=pal_ax_r, B='4::/%(zinc)g::E' % par_ax, config={ 'TICK_LENGTH': '0p' }, *widget.JXY())
+    else:
+        gmt.psbasemap( R=pal_ax_r, B='4::/%(zinc)g::E' % par_ax, *widget.JXY())
+
     if par_ax['zlabel']:
+        label_font = gmt.gmt_config['LABEL_FONT']
         label_font_size = gmt.to_points(gmt.gmt_config['LABEL_FONT_SIZE'])
-        gmt.pstext( R=(0,1,0,2), D="%gp/0p" % zlabeloffset, N=True, 
-                    in_rows=[(1, 1, label_font_size, -90, 0, 'CB', par_ax['zlabel'])],
+        label_offset = zlabeloffset
+        gmt.pstext( R=(0,1,0,2), D="%gp/0p" % label_offset, N=True, 
+                    in_rows=[(1, 1, label_font_size, -90, label_font, 'CB', par_ax['zlabel'])],
                     *widget.JXY() )
 
 if __name__ == '__main__':
