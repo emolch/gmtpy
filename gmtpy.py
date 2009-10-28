@@ -2315,7 +2315,7 @@ class GMT:
             args.append( '+'+gmt_config_filename )
             
         bs = 4096
-        p = subprocess.Popen( args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, env=self.environ )
+        p = subprocess.Popen( args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=bs, env=self.environ )
         while True:
             cr, cw, cx = select( [p.stdout], [p.stdin], [] )
             if cr:
@@ -2330,10 +2330,13 @@ class GMT:
             if not cr and not cw:
                 break
         
-        
         p.stdin.close()
-                
-        out_stream.write(p.stdout.read())
+        
+        while True:
+            data = p.stdout.read(bs)
+            if len(data) == 0: break
+            out_stream.write(data)
+            
         p.stdout.close()
  
         retcode = p.wait()
@@ -2467,7 +2470,7 @@ class GMT:
         
         if filename.endswith('.ppm'):
             pdffilename = pjoin(self.tempdir, 'incomplete.pdf')
-            subprocess.call([ 'perl', '/bonus/texlive/2008/bin/i386-linux/epstopdf', '--res=300', '--outfile='+pdffilename, tempfn])
+            subprocess.call([ 'gmtpy-epstopdf', '--res=300', '--outfile='+pdffilename, tempfn])
             interbasefn = pjoin(self.tempdir, 'incomplete')
             aa = ['-aa', 'no']
             if raster_antialias:
@@ -2475,7 +2478,7 @@ class GMT:
             subprocess.call([ 'pdftoppm', '-r', '%i' % raster_dpi] + aa + [ pdffilename, interbasefn ])
             shutil.move(interbasefn+'-1.ppm', filename)
         elif filename.endswith('.pdf'):
-            subprocess.call([ 'perl', '/bonus/texlive/2008/bin/i386-linux/epstopdf', '--res=300', '--outfile='+filename, tempfn])
+            subprocess.call([ 'gmtpy-epstopdf', '--res=300', '--outfile='+filename, tempfn])
         else:
             shutil.move(tempfn, filename)
     
