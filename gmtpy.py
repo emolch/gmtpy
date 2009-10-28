@@ -2467,7 +2467,7 @@ class GMT:
         
         if filename.endswith('.ppm'):
             pdffilename = pjoin(self.tempdir, 'incomplete.pdf')
-            subprocess.call([ 'epstopdf', '--outfile='+pdffilename, tempfn])
+            subprocess.call([ 'perl', '/bonus/texlive/2008/bin/i386-linux/epstopdf', '--res=300', '--outfile='+pdffilename, tempfn])
             interbasefn = pjoin(self.tempdir, 'incomplete')
             aa = ['-aa', 'no']
             if raster_antialias:
@@ -2475,7 +2475,7 @@ class GMT:
             subprocess.call([ 'pdftoppm', '-r', '%i' % raster_dpi] + aa + [ pdffilename, interbasefn ])
             shutil.move(interbasefn+'-1.ppm', filename)
         elif filename.endswith('.pdf'):
-            subprocess.call([ 'epstopdf', '--outfile='+filename, tempfn])
+            subprocess.call([ 'perl', '/bonus/texlive/2008/bin/i386-linux/epstopdf', '--res=300', '--outfile='+filename, tempfn])
         else:
             shutil.move(tempfn, filename)
     
