@@ -2183,13 +2183,11 @@ class GMT:
         self.gmt_config_filename = pjoin(self.tempdir, 'gmtdefaults')
         self.gen_gmt_config_file( self.gmt_config_filename, self.gmt_config )
         
-        self.output = StringIO()
         if kontinue is not None:
-            inp = open(kontinue, 'r')
-            self.output.write(inp.read())
-            inp.close()
+            self.load_unfinished(kontinue)
             self.needstart = False
         else:
+            self.output = StringIO()
             self.needstart = True
         
         self.finished = False
@@ -2434,6 +2432,21 @@ class GMT:
         out = open(filename, 'w')
         out.write(self.output.getvalue())
         out.close()
+        
+    def load_unfinished(self, filename):
+        self.output = StringIO()
+        self.finished = False
+        inp = open(filename, 'r')
+        self.output.write(inp.read())
+        inp.close()
+        
+    def dump(self, ident):
+        filename = self.tempfilename('breakpoint-%s' % ident)
+        self.save_unfinished(filename)
+        
+    def load(self, ident):
+        filename = self.tempfilename('breakpoint-%s' % ident)
+        self.load_unfinished(filename)
         
     def save(self, filename=None, bbox=None, raster_dpi=150, raster_antialias=True):
         '''Finish and save figure as PDF, PS or PPM file.
