@@ -1316,7 +1316,7 @@ class AutoScaler:
         
         Used to map 'auto' mode to '0-max', 'min-0', 'min-max' or 'symmetric'.
         '''
-        
+        a = 'min-max'
         if data_min >= 0.0:
             if data_min < data_max/2.:
                 a = '0-max'
@@ -3182,7 +3182,6 @@ class MPlot(Simple):
         lon0 = (par['xmin'] + par['xmax'])/2.
         lat0 = (par['ymin'] + par['ymax'])/2.
         sll = '%g/%g' % (lon0,lat0)
-        print sll
         widget['J'] = '-JM' + sll + '/%(width)gp'
 
 
