@@ -118,7 +118,7 @@ def color_tup(x=None):
    
     elif isinstance(x,str):
         if x in tango_colors:
-            return '%i/%i/%i' % tango_colors[x]
+            return tango_colors[x]
         
     return x
             
