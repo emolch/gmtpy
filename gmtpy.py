@@ -1484,11 +1484,16 @@ class ScaleGuru(Guru):
             in_range = True
             for ax,x in zip(self.axes, dt):
                 if ax.limits and ax.masking:
-                    in_range = num.logical_and(in_range, num.logical_and(ax.limits[0]<=x, x<=ax.limits[1]))
+                    ax_limits = list(ax.limits)
+                    if ax_limits[0] is None: ax_limits[0] = -num.inf
+                    if ax_limits[1] is None: ax_limits[1] = num.inf
+                    in_range = num.logical_and(
+                        in_range, 
+                        num.logical_and(ax_limits[0]<=x, x<=ax_limits[1]))
             
             for i,ax,x in zip(range(maxdim),self.axes, dt):
 
-                if not ax.limits:
+                if not ax.limits or None in ax.limits:
                     if len(x) >= 1:
                         if in_range is not True:
                             xmasked = num.where(in_range, x, num.NaN)
@@ -1507,6 +1512,14 @@ class ScaleGuru(Guru):
                                             scap(xmasked_finite, 100.-(100.-percent_interval)/2.))
                     else:
                         range_this = (0.,1.)
+                        
+                    if ax.limits:
+                        if ax.limits[0] is not None:
+                            range_this = ax.limits[0], max(ax.limits[0], range_this[1])
+                            
+                        if ax.limits[1] is not None:
+                            range_this = min(ax.limits[1],range_this[0]), ax.limits[1]
+                        
                 else:
                     range_this = ax.limits
                                 
