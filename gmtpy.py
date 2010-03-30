@@ -1361,9 +1361,15 @@ class Ax(AutoScaler):
         
      limits (None):
      
-        If defined, fix range of ax to limits=(min,max).'''
+        If defined, fix range of ax to limits=(min,max).
+        
+     masking (True):
+        
+        If true and if there is a limit on the ax, while calculating ranges, the
+        data points are masked such that data points outside of this axes limits
+        are not used to determine the range of another dependant ax.'''
     
-    def __init__(self, label='', unit='', scaled_unit_factor=1., scaled_unit='', limits=None, **kwargs):
+    def __init__(self, label='', unit='', scaled_unit_factor=1., scaled_unit='', limits=None, masking=True, **kwargs):
         '''Create new Ax instance.'''
         
         AutoScaler.__init__(self, **kwargs )
@@ -1372,6 +1378,7 @@ class Ax(AutoScaler):
         self.scaled_unit_factor = scaled_unit_factor
         self.scaled_unit = scaled_unit
         self.limits = limits
+        self.masking = masking
         
         
     def label_str(self, exp, unit):
@@ -1476,7 +1483,7 @@ class ScaleGuru(Guru):
             dt = num.asarray(dt_)
             in_range = True
             for ax,x in zip(self.axes, dt):
-                if ax.limits:
+                if ax.limits and ax.masking:
                     in_range = num.logical_and(in_range, num.logical_and(ax.limits[0]<=x, x<=ax.limits[1]))
             
             for i,ax,x in zip(range(maxdim),self.axes, dt):
@@ -2882,7 +2889,7 @@ def simpleconf_to_ax(conf, axname):
     x = axname
     for x in ('', axname):
         for k in ('label', 'unit', 'scaled_unit', 'scaled_unit_factor', 'space',
-                   'mode', 'approx_ticks', 'limits', 'inc', 'snap'):
+                   'mode', 'approx_ticks', 'limits', 'masking', 'inc', 'snap'):
             if x+k in conf: c[k] = conf[x+k]
             
     return Ax( **c )
