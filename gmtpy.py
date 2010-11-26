@@ -3246,7 +3246,7 @@ class Simple:
             fontno = td.fontno
             justify = td.justify
             gmt.pstext( in_rows=[(x,y,size,angle,fontno,justify,text)], D='%gp/%gp' % td.offset,  *rxyj )
-    
+
     def save(self, filename, raster_dpi=150):
 
         conf = dict(self.default_config)
