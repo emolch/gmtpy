@@ -2661,7 +2661,7 @@ class GMT:
         if not suppressdefaults:
             args.append( '+'+gmt_config_filename )
             
-        bs = 4096
+        bs = 2048
         p = subprocess.Popen( args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=bs, env=self.environ )
         while True:
             cr, cw, cx = select( [p.stdout], [p.stdin], [] )
@@ -2997,7 +2997,7 @@ class GMT:
         self.makecpt( C = 'ocean',
                     T = '%g/%g/%g' % (-nrects,nrects,1),
                     Z = True, 
-                    out_filename = cptfile)
+                    out_filename = cptfile, suppress_defaults=True)
                     
         bb = layout.bbox()
         self.psxy( in_columns = prects,
@@ -3015,23 +3015,28 @@ def simpleconf_to_ax(conf, axname):
                    'mode', 'approx_ticks', 'limits', 'masking', 'inc', 'snap'):
             if x+k in conf: c[k] = conf[x+k]
             
+            
     return Ax( **c )
 
 class DensityPlotDef:
-    def __init__(self, data, cpt='ocean', tension=0.7, size=(640,480), contour=False, method='surface'):
+    def __init__(self, data, cpt='ocean', tension=0.7, size=(640,480), contour=False, method='surface',
+            zscaler=None, **extra):
         self.data = data
         self.cpt = cpt
         self.tension = tension
         self.size = size
         self.contour = contour
         self.method = method
+        self.zscaler = zscaler
+        self.extra = extra
 
 class TextDef:
-    def __init__(self, data, size=9, justify='MC', fontno=0):
+    def __init__(self, data, size=9, justify='MC', fontno=0, offset=(0,0)):
         self.data = data
         self.size = size
         self.justify = justify
         self.fontno = fontno
+        self.offset = offset
 
 class Simple:
     def __init__(self, gmtconfig=None, **simple_config):
@@ -3129,7 +3134,10 @@ class Simple:
         data_all = []
         data_all.extend(self.data)
         for dsd in self.density_plot_defs:
-            data_all.append(dsd.data)
+            if dsd.zscaler is None:
+                data_all.append(dsd.data)
+            else:
+                data_all.append(dsd.data[:2])
         data_chopped = [ ds[:ndims] for ds in data_all ]
         
         scaler = ScaleGuru( data_chopped, axes=axes[:ndims] )
@@ -3163,7 +3171,12 @@ class Simple:
             
             fn_cpt = gmt.tempfilename()
             
-            gmt.makecpt( C=dpd.cpt, out_filename=fn_cpt, *scaler.T() )
+            if dpd.zscaler is not None:
+                s = dpd.zscaler
+            else:
+                s = scaler
+                
+            gmt.makecpt( C=dpd.cpt, out_filename=fn_cpt, *s.T() )
             
             fn_grid =  gmt.tempfilename()
             
@@ -3192,8 +3205,14 @@ class Simple:
                 os.remove(fn_mean)
 
             if dpd.method == 'fillcontour':
-                gmt.pscontour( in_columns=dpd.data, C=fn_cpt, I=True, *rxyj )
+                extra = dict( C=fn_cpt )
+                extra.update(dpd.extra)
+                gmt.pscontour( in_columns=dpd.data, I=True, *rxyj, **extra)
             
+            if dpd.method == 'contour':
+                extra = dict( W='0.5p,black', C=fn_cpt )
+                extra.update(dpd.extra)
+                gmt.pscontour( in_columns=dpd.data, *rxyj, **extra)
             
         return fn_cpt, innerticks
         
@@ -3226,9 +3245,9 @@ class Simple:
             angle = 0
             fontno = td.fontno
             justify = td.justify
-            gmt.pstext( in_rows=[(x,y,size,angle,fontno,justify,text)], *rxyj )
+            gmt.pstext( in_rows=[(x,y,size,angle,fontno,justify,text)], D='%gp/%gp' % td.offset,  *rxyj )
     
-    def save(self, filename):
+    def save(self, filename, raster_dpi=150):
 
         conf = dict(self.default_config)
         conf.update(self.config)
@@ -3254,7 +3273,7 @@ class Simple:
         if palette_widget and cptfile:
             nice_palette(gmt, palette_widget, scaler, cptfile, innerticks=innerticks, zlabeloffset=conf['zlabeloffset'])
  
-        gmt.save(filename)
+        gmt.save(filename, raster_dpi=raster_dpi)
         
 class LinLinPlot(Simple):
     pass
