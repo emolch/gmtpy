@@ -828,10 +828,19 @@ def detect_gmt_installation():
 def gmt_default_config(version):
     '''Get default GMT configuration dict for given version.'''
     
-    if not version in _gmt_defaults_by_version:
-        raise Exception('No GMT defaults for version %s found' % version)
+    avails = sorted( _gmt_defaults_by_version.keys(), cmp=cmp_version )
+    for iavail, avail in enumerate(avails):
+        if cmp(version,avail) == -1:
+            break
+        
+    iavail = max(iavail,0)
+    xversion = avails[iavail]
+        
+    #if not version in _gmt_defaults_by_version:
+    #    raise Exception('No GMT defaults for version %s found' % version)
     
-    gmt_defaults = _gmt_defaults_by_version[version]
+    
+    gmt_defaults = _gmt_defaults_by_version[xversion]
     
     d = {}
     for line in gmt_defaults.splitlines():
@@ -857,7 +866,7 @@ def diff_defaults(v1,v2):
         if k not in d1:
             print '%s not in %s' % (k, v1)
      
-#diff_defaults('4.5.2', '4.5.3')
+diff_defaults('4.5.2', '4.5.3')
 
 def setup_gmt_installations():
     if not setup_gmt_installations.have_done:
