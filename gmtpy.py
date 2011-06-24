@@ -39,6 +39,19 @@ def import_pycdf():
         raise ImportError,"Module pycdf is required to handle GMT grd files."
     return cdf 
 
+def escape_shell_arg(s):
+    '''This function should be used for debugging output only - it could be insecure.'''
+    
+    if re.search(r'[^a-zA-Z0-9._/=-]', s):
+        return "'" + s.replace("'", "'\\''") + "'"
+    else:
+        return s
+
+def escape_shell_args(args):
+    '''This function should be used for debugging output only - it could be insecure.'''
+    
+    return ' '.join([escape_shell_arg(x) for x in args])
+
 
 golden_ratio   = 1.61803
 
@@ -825,20 +838,26 @@ def detect_gmt_installation():
     gmtversion = get_gmt_version( pjoin(gmtbin,'gmtdefaults'), gmthome )
     return gmtversion, gmthome, gmtbin 
 
-def gmt_default_config(version):
-    '''Get default GMT configuration dict for given version.'''
+def appropriate_defaults_version(version):
     
     avails = sorted( _gmt_defaults_by_version.keys(), cmp=cmp_version )
     for iavail, avail in enumerate(avails):
-        if cmp(version,avail) == -1:
-            break
+        c = cmp_version(version,avail)
+        if c == 0:
+            return version
         
-    iavail = max(iavail,0)
-    xversion = avails[iavail]
+        elif c == -1:
+            return avails[max(0,iavail-1)]
+
+    return avails[-1]
+
+def gmt_default_config(version):
+    '''Get default GMT configuration dict for given version.'''
+    
+    xversion = appropriate_defaults_version(version)
         
     #if not version in _gmt_defaults_by_version:
     #    raise Exception('No GMT defaults for version %s found' % version)
-    
     
     gmt_defaults = _gmt_defaults_by_version[xversion]
     
@@ -866,7 +885,7 @@ def diff_defaults(v1,v2):
         if k not in d1:
             print '%s not in %s' % (k, v1)
      
-diff_defaults('4.5.2', '4.5.3')
+#diff_defaults('4.5.2', '4.5.3')
 
 def setup_gmt_installations():
     if not setup_gmt_installations.have_done:
@@ -2557,6 +2576,7 @@ class GMT:
        
         self.layout = None
         self.command_log = []
+        self.keep_temp_dir = False
     
     def get_config(self, key):
         return self.gmt_config[key]
@@ -2578,7 +2598,8 @@ class GMT:
     
     def __del__(self):
         import shutil
-        shutil.rmtree(self.tempdir)
+        if not self.keep_temp_dir:
+            shutil.rmtree(self.tempdir)
         
     def _gmtcommand(self, command, 
                           *addargs,
@@ -2701,7 +2722,8 @@ class GMT:
         if out_mustclose: out_stream.close()
 
         if retcode != 0: 
-            raise Exception('Command %s returned an error. While executing command:\n%s' % (command, str(args)) )
+            self.keep_temp_dir = True
+            raise Exception('Command %s returned an error. While executing command:\n%s' % (command, escape_shell_args(args)) )
         
         self.command_log.append( args )
         
@@ -2847,7 +2869,11 @@ class GMT:
             if raster_antialias:
                 aa = ['-aa', 'yes']
             subprocess.call([ 'pdftoppm', '-r', '%i' % raster_dpi] + aa + [ pdffilename, interbasefn ])
-            shutil.move(interbasefn+'-1.ppm', filename)
+            for interfn in [ interbasefn+'-1.ppm', interbasefn+'-000001.ppm' ]: # depends on version of pdftoppm
+                if os.path.exists(interfn):
+                    shutil.move(interfn, filename)
+                    break
+
         elif filename.endswith('.pdf'):
             subprocess.call([ 'gmtpy-epstopdf', '--res=300', '--outfile='+filename, tempfn])
         else:
