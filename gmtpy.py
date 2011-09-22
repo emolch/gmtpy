@@ -3371,7 +3371,7 @@ class MPlot(Simple):
         lat0 = (par['ymin'] + par['ymax'])/2.
         sll = '%g/%g' % (lon0,lat0)
         widget['J'] = '-JM' + sll + '/%(width)gp'
-
+        scaler['B'] = '-B%(xinc)gg%(xinc)g:%(xlabel)s:/%(yinc)gg%(yinc)g:%(ylabel)s:WSen'
 
 def nice_palette(gmt, widget, scaleguru, cptfile, zlabeloffset=0.8*inch, innerticks=True):
 
