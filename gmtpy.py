@@ -3261,6 +3261,9 @@ class Simple:
         
     def post_draw(self, gmt, widget, scaler):
         pass
+    
+    def pre_draw(self, gmt, widget, scaler):
+        pass
 
     def draw_extra(self, gmt, widget, scaler_x, scaler_y):
         
@@ -3299,6 +3302,7 @@ class Simple:
         cptfile = None
         if self.density_plot_defs:
             cptfile, innerticks = self.draw_density(gmt, widget, scaler)
+        self.pre_draw(gmt, widget, scaler)
         self.draw(gmt, widget, scaler)
         self.post_draw(gmt, widget, scaler)
         self.draw_extra(gmt, widget, scaler_x, scaler_y)
