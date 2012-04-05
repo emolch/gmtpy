@@ -25,7 +25,7 @@ GmtPy is `hosted at GitHub <https://github.com/emolch/gmtpy/>`_, so the simplest
     cd ~/src/   # or wherever you keep your source packages
     git clone git://github.com/emolch/gmtpy.git gmtpy
 
-Alternatively, you may download GmtPy as a `tar archive <http://github.com/emolch/gmtpy/tarball/master>`_, but updating is easier
+Alternatively, you may download GmtPy as a `tar archive <https://github.com/emolch/gmtpy/tarball/master>`_, but updating is easier
 with the method described above.
 
 Install
