@@ -1,6 +1,9 @@
+Reference Manual
+================
 
-Documentation
-=============
+
+The :py:mod:`gmtpy` module
+--------------------------
 
 .. automodule:: gmtpy
 
@@ -33,3 +36,8 @@ Documentation
     .. autoclass:: GridLayout
         :members:
 
+    .. autofunction:: color
+    .. autofunction:: color_tup
+    .. autofunction:: loadgrd
+    .. autofunction:: savegrd
+ 

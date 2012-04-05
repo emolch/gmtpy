@@ -20,7 +20,7 @@ Ensure that the ``$GMTHOME`` environment variable is set properly.
 Download
 --------
 
-GmtPy is hosted at `GitHub <https://github.com/>`_, so the simplest way to download is to use Git::
+GmtPy is `hosted at GitHub <https://github.com/emolch/gmtpy/>`_, so the simplest way to download is to use :program:`git`::
 
     cd ~/src/   # or wherever you keep your source packages
     git clone git://github.com/emolch/gmtpy.git gmtpy
@@ -37,12 +37,12 @@ To install GmtPy system wide (usually somewhere under ``/usr/local``), simply ru
 
 It is also possible to install to a custom location. To do so, use the
 ``--prefix`` option of ``setup.py`` and adjust the environment variable
-``$PYTHONPATH``.
+``$PYTHONPATH`` (see `distutils documentation <http://docs.python.org/install/index.html>`_ for details).
 
 Update
 ------
 
-If you used Git to download GmtPy, and you would later want to update, use the
+If you used :program:`git` to download GmtPy, and you would later want to update, use the
 following commands (from within GmtPy's source directory)::
     
     git pull origin master 

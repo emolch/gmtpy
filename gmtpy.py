@@ -1,6 +1,4 @@
-'''GmtPy - A Python interface to GMT
-
-Go to http://kinherd.org/gmtpy.html for latest version and documentation.'''
+'''A Python interface to GMT.'''
 
 #    Copyright 2009 Sebastian Heimann
 #
@@ -96,10 +94,10 @@ graph_colors = [ tango_colors[_x] for _x in ('scarletred2', 'skyblue3', 'chamele
 def color(x=None):
     '''Generate a string for GMT option arguments expecting a color.
     
-    If x is None, a random color is returned. If it is an integer, the corresponding
-    gmtpy.graph_colors[x] or black returned. If it is a string and the corresponding
-    gmtpy.tango_colors[x] exists, this is returned, or the string is passed through.
-    If x is a tuple, it is transformed into the string form which GMT expects.
+    If `x` is None, a random color is returned. If it is an integer, the corresponding
+    ``gmtpy.graph_colors[x]`` or black returned. If it is a string and the corresponding
+    ``gmtpy.tango_colors[x]`` exists, this is returned, or the string is passed through.
+    If `x` is a tuple, it is transformed into the string form which GMT expects.
     '''
     
     if x is None:
@@ -810,7 +808,7 @@ INTERPOLANT             = akima
 LINE_STEP               = 0.01i
 VECTOR_SHAPE            = 0
 VERBOSE                 = FALSE
-'''
+''' # '''
 
 def get_gmt_version( gmtdefaultsbinary, gmthomedir ):
     args = [ gmtdefaultsbinary ]
@@ -1208,8 +1206,8 @@ def doublegrid(x,y,z):
 class Guru:
     '''Abstract base class providing template interpolation, accessible as attributes.
     
-    Classes deriving from this one, have to implement a get_params(), which is
-    called to get a dict to do ordinary "%(key)x"-substitutions. The deriving class
+    Classes deriving from this one, have to implement a :py:meth:`get_params` method, which is
+    called to get a dict to do ordinary ``"%(key)x"``-substitutions. The deriving class
     must also provide a dict with the templates.'''
         
     def fill(self, templates, **kwargs):
@@ -1251,7 +1249,7 @@ class Guru:
 
             
 def nice_value(x):
-    '''Round x to nice value.'''
+    '''Round `x` to nice value.'''
     
     exp = 1.0
     sign = 1
@@ -1284,56 +1282,61 @@ class AutoScaler:
     increments for ax annotations, as well as suitable common exponents for
     notation.
 
-    The autoscaling process is guided by the following public attributes
-    (default values are given in parantheses):
+    The autoscaling process is guided by the following public attributes:
 
-      approx_ticks (7.0):
+        .. py:attribute:: approx_ticks
 
-        Approximate number of increment steps (tickmarks) to generate.
-
-      mode ('auto'):
-
-        Mode of operation: one of 'auto', 'min-max', '0-max', 'min-0',
-        'symmetric' or 'off'.
-
-          'auto':      Look at data range and choose one of the choices below.
-          'min-max':   Output range is selected to include data range.
-          '0-max':     Output range shall start at zero and end at data max.
-          'min-0':     Output range shall start at data min and end at zero. 
-          'symmetric': Output range shall by symmetric by zero.
-          'off':       Similar to 'min-max', but snap and space are disabled, 
-                       such that the output range always exactly matches the 
-                       data range.
-      
-      exp (None):
-      
-        If defined, override automatically determined exponent for notation by
-        the given value.
+            Approximate number of increment steps (tickmarks) to generate.
         
-      snap (False):
-      
-        If set to True, snap output range to multiples of increment. This
-        parameter has no effect, if mode is set to 'off'.
-        
-      inc (None):
-      
-        If defined, override automatically determined tick increment by the
-        given value.
-      
-      space (0.0):
-      
-        Add some padding to the range. The value given, is the fraction by which
-        the output range is increased on each side. If mode is '0-max' or 'min-0',
-        the end at zero is kept fixed at zero. This parameter has no effect if 
-        mode is set to 'off'.
-      
-      exp_factor (3):
-        
-        Exponent of notation is chosen to be a multiple of this value.
-        
-      no_exp_interval ((-3,5)):
-      
-        Range of exponent, for which no exponential notation is allowed.'''
+        .. py:attribute:: mode
+
+            Mode of operation: one of ``'auto'``, ``'min-max'``, ``'0-max'``, ``'min-0'``,
+            ``'symmetric'`` or ``'off'``.
+
+            ================ =======================================================
+            mode             description
+            ================ =======================================================
+            ``'auto'``:      Look at data range and choose one of the choices below.
+            ``'min-max'``:   Output range is selected to include data range.
+            ``'0-max'``:     Output range shall start at zero and end at data max.
+            ``'min-0'``:     Output range shall start at data min and end at zero. 
+            ``'symmetric'``: Output range shall by symmetric by zero.
+            ``'off'``:       Similar to ``'min-max'``, but snap and space are 
+                             disabled, such that the output range always exactly 
+                             matches the data range.
+            ================ =======================================================
+
+        .. py:attribute:: exp
+          
+            If defined, override automatically determined exponent for notation by
+            the given value.
+            
+        .. py:attribute:: snap
+          
+            If set to True, snap output range to multiples of increment. This
+            parameter has no effect, if mode is set to ``'off'``.
+            
+        .. py:attribute:: inc
+          
+            If defined, override automatically determined tick increment by the
+            given value.
+          
+        .. py:attribute:: space
+          
+            Add some padding to the range. The value given, is the fraction by which
+            the output range is increased on each side. If mode is ``'0-max'`` or ``'min-0'``,
+            the end at zero is kept fixed at zero. This parameter has no effect if 
+            mode is set to ``'off'``.
+          
+        .. py:attribute:: exp_factor
+            
+            Exponent of notation is chosen to be a multiple of this value.
+            
+        .. py:attribute:: no_exp_interval:
+          
+            Range of exponent, for which no exponential notation is allowed.
+   
+   ''' # '''
             
     def __init__(self, approx_ticks=7.0, 
                        mode='auto',
@@ -1362,9 +1365,9 @@ class AutoScaler:
         
         '''Get nice minimum, maximum and increment for given data range.
         
-        Returns (minimum,maximum,increment) or (maximum,minimum,-increment),
-        depending on whether data_range is (data_min, data_max) or (data_max,
-        data_min). If override_mode is defined, the mode attribute is
+        Returns ``(minimum, maximum, increment)`` or ``(maximum, minimum, -increment)``,
+        depending on whether data_range is ``(data_min, data_max)`` or ``(data_max,
+        data_min)``. If `override_mode` is defined, the mode attribute is
         temporarily overridden by the given value.
         '''
         
@@ -1439,9 +1442,9 @@ class AutoScaler:
             return mi, ma, inc
         
     def make_exp(self, x):
-        '''Get nice exponent for notation of x.
+        '''Get nice exponent for notation of `x`.
         
-        For ax annotations, give tick increment as x.'''
+        For ax annotations, give tick increment as `x`.'''
         
         if self.exp is not None: return self.exp
         x = abs(x)
@@ -1452,7 +1455,7 @@ class AutoScaler:
     def guess_autoscale_mode(self, data_min, data_max):
         '''Guess mode of operation, based on data range.
         
-        Used to map 'auto' mode to '0-max', 'min-0', 'min-max' or 'symmetric'.
+        Used to map ``'auto'`` mode to ``'0-max'``, ``'min-0'``, ``'min-max'`` or ``'symmetric'``.
         '''
         a = 'min-max'
         if data_min >= 0.0:
@@ -1476,39 +1479,43 @@ class AutoScaler:
 class Ax(AutoScaler):
     '''Ax description with autoscaling capabilities.
     
-    The ax is described by the AutoScaler's public attributes, plus the following
+    The ax is described by the :py:class:`AutoScaler` public attributes, plus the following
     additional attributes (with default values given in paranthesis):
     
-      label (''):
+      .. py:attribute:: label
     
-        Ax label (without unit).
+          Ax label (without unit).
       
-      unit (''):
+      .. py:attribute:: unit
         
-        Physical unit of the data attached to this ax.
+          Physical unit of the data attached to this ax.
       
-      scaled_unit (''),
-      scaled_unit_factor(1.):
+      .. py:attribute:: scaled_unit
+
+           (see below)
+
+      .. py:attribute:: scaled_unit_factor
       
-        Scaled physical unit and factor between unit and scaled_unit such that
+          Scaled physical unit and factor between unit and scaled_unit such that
         
             unit = scaled_unit_factor x scaled_unit. 
         
-        (E.g. if unit is 'm' and data is in the range of nanometers, you may
-        want to set the scaled_unit to 'nm' and the scaled_unit_factor to 1e9.)
+          (E.g. if unit is 'm' and data is in the range of nanometers, you may
+          want to set the scaled_unit to 'nm' and the scaled_unit_factor to 1e9.)
         
-     limits (None):
+      .. py:attribute:: limits
      
-        If defined, fix range of ax to limits=(min,max).
+          If defined, fix range of ax to limits=(min,max).
         
-     masking (True):
+      .. py:attribute:: masking
         
-        If true and if there is a limit on the ax, while calculating ranges, the
-        data points are masked such that data points outside of this axes limits
-        are not used to determine the range of another dependant ax.'''
+          If true and if there is a limit on the ax, while calculating ranges, the
+          data points are masked such that data points outside of this axes limits
+          are not used to determine the range of another dependant ax.
+          
+    '''
     
     def __init__(self, label='', unit='', scaled_unit_factor=1., scaled_unit='', limits=None, masking=True, **kwargs):
-        '''Create new Ax instance.'''
         
         AutoScaler.__init__(self, **kwargs )
         self.label = label
@@ -1540,14 +1547,14 @@ class Ax(AutoScaler):
         
         
     def make_params(self, data_range, ax_projection=False, override_mode=None, override_scaled_unit_factor=None):
-        '''Get min, max, increment and label string for ax display.'
+        '''Get minimum, maximum, increment and label string for ax display.'
         
         Returns minimum, maximum, increment and label string including unit and
         multiplier for given data range.
         
-        If ax_projection is True, values suitable to be displayed on the ax are
+        If `ax_projection` is True, values suitable to be displayed on the ax are
         returned, e.g. min, max and inc are returned in scaled units. Otherwise
-        the values are returned in the original units, without any scaling.
+        the values are returned in the original units, without any scaling applied.
         '''
             
         sf = self.scaled_unit_factor
@@ -1582,14 +1589,14 @@ class ScaleGuru(Guru):
     particular be used to automatically generate the -R and -B option arguments,
     which are required for most GMT commands.
 
-    It extends the functionality of the Ax and AutoScaler classes at the level,
-    where it can not be handled anymore by looking at a single dimension of the
-    dataset's data, e.g.:
+    It extends the functionality of the :py:class:`Ax` and
+    :py:class:`AutoScaler` classes at the level, where it can not be handled
+    anymore by looking at a single dimension of the dataset's data, e.g.:
 
-       i) The ability to impose a fixed aspect ratio between two axes.
+    * The ability to impose a fixed aspect ratio between two axes.
 
-       ii) Recalculation of data range on non-limited axes, when there are
-       limits imposed on other axes.
+    * Recalculation of data range on non-limited axes, when there are
+      limits imposed on other axes.
 
     '''
     
@@ -1684,13 +1691,13 @@ class ScaleGuru(Guru):
         
         For each data dimension, ax minimum, maximum, increment and a label
         string (including unit and exponential factor) are determined. E.g. in
-        for the first dimension the output dict will contain the keys 'xmin',
-        'xmax', 'xinc', and 'xlabel'. 
+        for the first dimension the output dict will contain the keys ``'xmin'``,
+        ``'xmax'``, ``'xinc'``, and ``'xlabel'``. 
 
         Normally, values corresponding to the scaling of the raw data are
-        produced, but if ax_projection is True, values which are suitable to be
+        produced, but if `ax_projection` is ``True``, values which are suitable to be
         printed on the axes are returned. This means that in the latter case,
-        the 'scaled_unit' and 'scaled_unit_factor' attributes as set on the axes
+        the :py:attr:`Ax.scaled_unit` and :py:attr:`Ax.scaled_unit_factor` attributes as set on the axes
         are respected and that a common 10^x factor is factored out and put to
         the label string.
         '''
@@ -1766,25 +1773,25 @@ class Widget(Guru):
     placing of elements on the output page, and maintains the sizing policies of
     each element. Each of the layouts defined in gmtpy is itself a Widget.
     
-    Sizing of the widget is controlled by get_min_size() and get_grow() which
-    should be overloaded in derived classes. The basic behaviour of a Widget
-    instance is to have a vertical and a horizontal minimum size which default
-    to zero, as well as a vertical and a horizontal desire to grow, represented
-    by floats, which default to 1. Additionally an aspect ratio constraint may
-    be imposed on the Widget.
+    Sizing of the widget is controlled by :py:meth:`get_min_size` and
+    :py:meth:`get_grow` which should be overloaded in derived classes. The
+    basic behaviour of a Widget instance is to have a vertical and a horizontal
+    minimum size which default to zero, as well as a vertical and a horizontal
+    desire to grow, represented by floats, which default to 1.0. Additionally an
+    aspect ratio constraint may be imposed on the Widget.
 
     After layouting, the widget provides its width, height, x-offset and
-    y-offset in various ways. Via the Guru interface (see Guru class), templates
-    for the -X, -Y and -J option arguments used by GMT arguments are provided.
-    The defaults are suitable for plotting of linear (-JX) plots. Other
-    projections can be selected by giving an appropriate 'J' template, or by
-    manual construction of the -J option, e.g. by utilizing the width() and
-    height() methods. The bbox() method can be used to create a PostScript
-    bounding box from the widgets border, e.g. for use in the save() method of
-    GMT instances.
+    y-offset in various ways. Via the Guru interface (see :py:class:`Guru`
+    class), templates for the -X, -Y and -J option arguments used by GMT
+    arguments are provided.  The defaults are suitable for plotting of linear
+    (-JX) plots. Other projections can be selected by giving an appropriate 'J'
+    template, or by manual construction of the -J option, e.g. by utilizing the
+    :py:meth:`width` and :py:meth:`height` methods. The :py:meth:`bbox` method
+    can be used to create a PostScript bounding box from the widgets border,
+    e.g. for use in the :py:meth:`save` method of :py:class:`GMT` instances.
 
     The convention is, that all sizes are given in PostScript points. Conversion
-    factors are provided as constants 'inch' and 'cm' in the gmtpy module.
+    factors are provided as constants :py:const:`inch` and :py:const:`cm` in the gmtpy module.
     '''
     
     def __init__(self, horizontal=None, vertical=None, parent=None):
@@ -1814,7 +1821,7 @@ class Widget(Guru):
         
         '''Set the parent widget.
         
-        This method should not be called directly. The set_widget() methods are 
+        This method should not be called directly. The :py:meth:`set_widget` methods are 
         responsible for calling this.
         '''
         
@@ -1839,9 +1846,10 @@ class Widget(Guru):
     def set_horizontal(self, minimal=None, grow=None):
         
         '''Set the horizontal sizing policy of the Widget.
+       
         
-           minimal: new minimal width of the widget
-           grow:    new horizontal grow disire of the widget
+        :param minimal: new minimal width of the widget
+        :param grow:    new horizontal grow disire of the widget
         '''
         
         self.horizontal = GumSpring(minimal, grow)
@@ -1854,8 +1862,8 @@ class Widget(Guru):
         
         '''Set the horizontal sizing policy of the Widget.
         
-           minimal: new minimal height of the widget
-           grow:    new vertical grow disire of the widget
+        :param minimal: new minimal height of the widget
+        :param grow:    new vertical grow disire of the widget
         '''
 
         self.vertical = GumSpring(minimal, grow)
@@ -1988,7 +1996,7 @@ class Widget(Guru):
         
         Returns list with coordinate tuples.
         
-        If `decend` is True, the returned list will contain corner coordinates
+        If `descend` is True, the returned list will contain corner coordinates
         of all sub-widgets.
         '''
         
@@ -2043,7 +2051,7 @@ class Widget(Guru):
         
         '''Get current size and position of the widget.
         
-        Triggers layouting and returns (width, height), (xoffset, yoffset)
+        Triggers layouting and returns ``((width, height), (xoffset, yoffset))``
         '''
         
         self.do_layout()
@@ -2053,8 +2061,8 @@ class Widget(Guru):
         
         '''Get current size and position of the widget.
         
-        Triggers layouting and returns dict with keys `xoffset`, `yoffset`,
-        `width` and `height`.
+        Triggers layouting and returns dict with keys ``'xoffset'``, ``'yoffset'``,
+        ``'width'`` and ``'height'``.
         '''
         
         self.do_layout()
@@ -2159,7 +2167,9 @@ class FrameLayout(Widget):
     
     '''A layout manager containing a center widget sorrounded by four margin
     widgets.
-    
+
+    ::
+
             +---------------------------+
             |             top           |
             +---------------------------+
@@ -2170,15 +2180,16 @@ class FrameLayout(Widget):
             |           bottom          |
             +---------------------------+
     
-    This layout manager does a little bit of extra effort to maintain the aspect
-    constraint of the center widget, if this is set. It does so, by allowing for
-    a bit more flexibility in the sizing of the margins. Two shortcut methods
-    are provided to set the margin sizes in one shot: set_fixed_margins and
-    set_min_margins. The first sets the margins to fixed sizes, while the second
-    gives them a minimal size and a (neglectably) small desire to grow. Using
-    the latter may be useful when setting an aspect constraint on the center
-    widget, because this way the maximum size of the center widget may be
-    controlled without creating empty spaces between the widgets.
+    This layout manager does a little bit of extra effort to maintain the
+    aspect constraint of the center widget, if this is set. It does so, by
+    allowing for a bit more flexibility in the sizing of the margins. Two
+    shortcut methods are provided to set the margin sizes in one shot:
+    :py:meth:`set_fixed_margins` and :py:meth:`set_min_margins`. The first sets
+    the margins to fixed sizes, while the second gives them a minimal size and
+    a (neglectably) small desire to grow. Using the latter may be useful when
+    setting an aspect constraint on the center widget, because this way the
+    maximum size of the center widget may be controlled without creating empty
+    spaces between the widgets. 
     '''
     
     def __init__(self, horizontal=None, vertical=None):
@@ -2281,7 +2292,7 @@ class FrameLayout(Widget):
         
         '''Set one of the sub-widgets.
         
-        `which` should be one of 'left', 'right', 'top', 'bottom' or 'center'.
+        `which` should be one of ``'left'``, ``'right'``, ``'top'``, ``'bottom'`` or ``'center'``.
         '''
         
         if widget is None:
@@ -2298,7 +2309,7 @@ class FrameLayout(Widget):
         
         '''Get one of the sub-widgets.
         
-        `which` should be one of 'left', 'right', 'top', 'bottom' or 'center'.
+        `which` should be one of ``'left'``, ``'right'``, ``'top'``, ``'bottom'`` or ``'center'``.
         '''
         
         if which in ('left', 'right', 'top', 'bottom', 'center'):
@@ -2511,44 +2522,43 @@ class LineStreamChopper:
 class GMT:
     '''A thin wrapper to GMT command execution.
     
+    A dict `config` may be given to override some of the default GMT
+    parameters. The `version` argument may be used to select a specific GMT
+    version, which should be used with this GMT instance. The selected
+    version of GMT has to be installed on the system, must be supported by
+    gmtpy and gmtpy must know where to find it.
+
     Each instance of this class is used for the task of producing one PS or PDF
     output file.
 
     Output of a series of GMT commands is accumulated in memory and can then be
-    saved as PS or PDF file using the save() method.
+    saved as PS or PDF file using the :py:meth:`save` method.
 
     GMT commands are accessed as method calls to instances of this class. See
-    docstring of __getattr__() for details on how the method's arguments are
-    translated into options and arguments for the GMT command.
+    the :py:meth:`__getattr__` method for details on how the method's
+    arguments are translated into options and arguments for the GMT command.
 
     Associated with each instance of this class, a temporary directory is
     created, where temporary files may be created, and which is automatically
-    deleted, when the object is destroyed. The tempfilename() method may be used
-    to get a random filename in the instance's temporary directory.
+    deleted, when the object is destroyed. The :py:meth:`tempfilename` method
+    may be used to get a random filename in the instance's temporary directory.
 
-    Any .gmtdefaults files are ignored. The GMT class uses a fixed set of
-    defaults, which may be altered via an argument to the constructor. If
-    possible, GMT is run in 'isolation mode', which was introduced with GMT
-    version 4.2.2, by setting GMT_TMPDIR to the instance's  temporary directory.
-    With earlier versions of GMT, problems may arise with parallel execution of
-    more than one GMT instance.
+    Any .gmtdefaults files are ignored. The GMT class uses a fixed
+    set of defaults, which may be altered via an argument to the constructor.
+    If possible, GMT is run in 'isolation mode', which was introduced with GMT
+    version 4.2.2, by setting `GMT_TMPDIR` to the instance's  temporary
+    directory.  With earlier versions of GMT, problems may arise with parallel
+    execution of more than one GMT instance.
     
     Each instance of the GMT class may pick a specific version of GMT which
     shall be used, so that, if multiple versions of GMT are installed on the
     system, different versions of GMT can be used simultaneously such that
     backward compatibility of the scripts can be maintained.
+    
     '''
     
 
     def __init__(self, config=None, kontinue=None, version='newest'):
-        
-        '''Create a new GMT instance.
-         
-        A dict gmt_config may be given to override some of the default GMT
-        parameters. The version argument may be used to select a specific GMT
-        version, which should be used with this GMT instance. The selected
-        version of GMT has to be installed on the system, must be supported by
-        gmtpy and gmtpy must know where to find it.'''
         
         self.installation = get_gmt_installation(version)
         self.gmt_config = dict(self.installation['defaults'])
@@ -2730,7 +2740,7 @@ class GMT:
     
     def __getattr__(self, command):
         
-        '''Maps to call self._gmtcommand(command, *addargs, **kwargs).
+        '''Maps to call self._gmtcommand(command, \*addargs, \*\*kwargs).
                         
         Execute arbitrary GMT command.
         
@@ -2741,48 +2751,52 @@ class GMT:
         Except for a few keyword arguments listed below, any `kwargs` and
         `addargs` are converted into command line options and arguments and
         passed to the GMT command. Numbers in keyword arguments are converted
-        into strings. E.g. S=10 is translated into '-S10'. Tuples of numbers or
+        into strings. E.g. ``S=10`` is translated into ``'-S10'``. Tuples of numbers or
         strings are converted into strings where the elements of the tuples are
-        separated by slashes '/'. E.g. R=(10,10,20,20) is translated into
-        '-R10/10/20/20'. Options with a boolean argument are only appended to
+        separated by slashes '/'. E.g. ``R=(10,10,20,20)`` is translated into
+        ``'-R10/10/20/20'``. Options with a boolean argument are only appended to
         the GMT command, if their values are True.
         
         If no output redirection is in effect, the -K and -O options are handled
-        by gmtpy and thus should not be specified. Use out_discard=True if you
+        by gmtpy and thus should not be specified. Use ``out_discard=True`` if you
         don't want -K or -O beeing added, but are not interested in the output.
 
         The standard input of the GMT process is fed by data selected with one 
-        of the following in_* keyword arguments:
+        of the following `in_*` keyword arguments:
         
-           in_stream:   Data is read from an open file like object.
-           in_filename: Data is read from the given file.
-           in_string:   String content is dumped to the process.
-           in_columns:  A 2D nested iterable whose elements can be accessed as
-                        in_columns[icolumn][irow] is converted into an ascii
-                        table, which is fed to the process.
-           in_rows:     A 2D nested iterable whos elements can be accessed as
-                        in_rows[irow][icolumn] is converted into an ascii table,
-                        which is fed to the process.
+        ============== =============================================================
+        `in_stream`    Data is read from an open file like object.
+        `in_filename`  Data is read from the given file.
+        `in_string`    String content is dumped to the process.
+        `in_columns`   A 2D nested iterable whose elements can be accessed as
+                       ``in_columns[icolumn][irow]`` is converted into an ascii
+                       table, which is fed to the process.
+        `in_rows`      A 2D nested iterable whos elements can be accessed as
+                       ``in_rows[irow][icolumn]`` is converted into an ascii table,
+                       which is fed to the process.
+        ============== =============================================================
 
         The standard output of the GMT process may be redirected by one of the 
         following options:
-        
-           out_stream:   Output is fed to an open file like object.
-           out_filename: Output is dumped to the given file.
-           out_discard:  If True, output is dumped to /dev/null.
+       
+        ============= ==============================================================
+        out_stream    Output is fed to an open file like object.
+        out_filename  Output is dumped to the given file.
+        out_discard   If True, output is dumped to :file:`/dev/null`.
+        ============= ==============================================================
         
         Additional keyword arguments:
         
-           config:      Dict with GMT defaults which override the currently
-                        active set of defaults exclusively during this call.
-                        
-           finish:      If True, the postscript file, which is maintained by the 
-                        GMT instance is finished, and no further plotting is 
-                        allowed.
-                        
-           suppress_defaults:
-                        Suppress appending of the '+gmtdefaults' option to the 
-                        command.
+        ===================== ==============================================================
+        config                Dict with GMT defaults which override the currently
+                              active set of defaults exclusively during this call.
+        finish                If True, the postscript file, which is maintained by the 
+                              GMT instance is finished, and no further plotting is 
+                              allowed.
+        suppress_defaults     Suppress appending of the ``'+gmtdefaults'`` option to the 
+                              command.
+        ===================== ==============================================================
+        
         '''
         
         def f(*args, **kwargs):
@@ -2831,14 +2845,14 @@ class GMT:
     def save(self, filename=None, bbox=None, raster_dpi=150, raster_antialias=True):
         '''Finish and save figure as PDF, PS or PPM file.
            
-           If filename ends with '.pdf' a PDF file is created by piping the 
-           GMT output through epstopdf.
+           If filename ends with ``'.pdf'`` a PDF file is created by piping the 
+           GMT output through :program:`epstopdf`.
            
-           If filename ends with '.ppm' a PPM file is created by running 
-           epstopdf and pdftoppm. 'raster_dpi' specifies the resolution, which
-           is passed to pdftoppm.
+           If filename ends with ``'.ppm'`` a PPM file is created by running 
+           :program:`epstopdf` and :program:`pdftoppm`. `raster_dpi` specifies the resolution, which
+           is passed to :program:`pdftoppm`.
            
-           The bounding box is set according to the values given in bbox.'''
+           The bounding box is set according to the values given in `bbox`.'''
         
         if not self.finished:
             self.psxy(R=True, J=True, finish=True)
@@ -2931,17 +2945,17 @@ class GMT:
     def default_layout(self, with_palette=False):
         '''Get a default layout for the output page.
            
-        One of three different layouts is choosen, depending on the PAPER_MEDIA
-        settings in the GMT configuration dict.
+        One of three different layouts is choosen, depending on the `PAPER_MEDIA <http://gmt.soest.hawaii.edu/gmt/html/man/gmtdefaults.html#PAPER_MEDIA>`_
+        setting in the GMT configuration dict.
 
-        If PAPER_MEDIA ends with a "+" such that EPS output is selected, a
-        FrameLayout is centered on the page, whose size is controlled by its
-        center widget's size plus the margins of the FrameLayout.
+        If `PAPER_MEDIA` ends with a ``'+'`` (EPS output is selected), a
+        :py:class:`FrameLayout` is centered on the page, whose size is controlled by its
+        center widget's size plus the margins of the :py:class:`FrameLayout`.
 
-        If PAPER_MEDIA indicates, that a custom page size is wanted by starting
-        with "Custom_", a FrameLayout is used to fill the complete page. The
-        center widget's size is then controlled by the page's size minus the
-        margins of the FrameLayout.
+        If `PAPER_MEDIA` indicates, that a custom page size is wanted by
+        starting with ``'Custom_'``, a :py:class:`FrameLayout` is used to fill
+        the complete page. The center widget's size is then controlled by the
+        page's size minus the margins of the :py:class:`FrameLayout`.
         
         In any other case, two FrameLayouts are nested, such that the outer
         layout attaches a 1 cm (printer) margin around the complete page, and
@@ -2949,8 +2963,8 @@ class GMT:
         under the constraint, that an aspect ratio of 1/golden_ratio is
         preserved.
         
-        In any case, a reference to the innermost FrameLayout instance is
-        returned. The top-level layout can be accessed by calling get_parent() on
+        In any case, a reference to the innermost :py:class:`FrameLayout` instance is
+        returned. The top-level layout can be accessed by calling :py:meth:`Widget.get_parent` on
         the returned layout.
         '''
         

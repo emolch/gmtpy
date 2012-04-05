@@ -17,6 +17,7 @@ Contents
    install 
    tutorial
    documentation
+   remarks
 
 Indices and tables
 ------------------

@@ -7,7 +7,7 @@ This tutorial assumes that you are familiar with `Python
 <http://www.python.org/>`_ as well as with `GMT
 <http://gmt.soest.hawaii.edu/>`_. If not, to avoid frustration, you may first
 want to dive into the `Python tutorial <http://docs.python.org/tutorial/>`_ or the
-`GMT tutorial <http://gmt.soest.hawaii.edu/gmt/doc/gmt/html/GMT_Tutorial/GMT_Tutorial.html>`_.
+`GMT tutorial <http://gmt.soest.hawaii.edu/gmt/html/GMT_Tutorial.html>`_.
 
 Example 1: Basic usage
 ----------------------
@@ -18,7 +18,7 @@ The most basic usage of GmtPy is to use it as a replacement for plain GMT shell 
     :align: center
     :class: boxed
 
-Here is a simple shell script producing the map above with a single call to `pscoast <http://gmt.soest.hawaii.edu/gmt/html/man/pscoast.html>`_, which we would then like to translate into a Python script.
+Here is a simple shell script producing the map above with a single call to :program:`pscoast` (`man <http://gmt.soest.hawaii.edu/gmt/html/man/pscoast.html>`_), which we would then like to translate into a Python script.
 
 Shell script version
 ....................
@@ -98,13 +98,13 @@ How GmtPy handles gmtdefaults variables
 ........................................
 
 * GmtPy uses its own consistent built-in set of gmtdefaults parameters, such that running a GmtPy script on a different machine, or from a different user account should not change the appearance of the output graphics.
-* The keyword argument `config` of :py:class:`GMT` takes a dict with all the `gmtdefaults <http://gmt.soest.hawaii.edu/gmt/html/man/gmtdefaults.html>`_ variables which you want to override.
+* The keyword argument `config` of :py:class:`GMT` takes a dict with all the :program:`gmtdefaults` (`man <http://gmt.soest.hawaii.edu/gmt/html/man/gmtdefaults.html>`_) variables which you want to override.
 * The defaults are selected with the hypothetical default goal of producing graphics to be included in publications or presentations. In particular, EPS output (``PAPER_MEDIA = a4+``) and portrait page orientation  (``PAGE_ORIENTATION = portrait``) are selected as defaults. You can get the complete list of defaults with:: 
    
         import gmtpy
         print gmtpy.gmtdefaults_as_text()
 
-* The `gmtset <http://gmt.soest.hawaii.edu/gmt/html/man/gmtset.html>`_ utility should not be used with GmtPy.
+* The :program:`gmtset` (`man <http://gmt.soest.hawaii.edu/gmt/html/man/gmtset.html>`_) utility should not be used with GmtPy.
 * GmtPy ignores any ``.gmtdefaults`` files.
 
 How method arguments are turned into command line arguments by GmtPy
@@ -293,7 +293,7 @@ Remarks
 .......
 
 * The default layouts are tuned to the ``PAPER_MEDIA`` and ``PAGE_ORIENTATION``
-  `gmtdefaults <http://gmt.soest.hawaii.edu/gmt/html/man/gmtdefaults.html>`_
+  :program:`gmtdefaults` (`man <http://gmt.soest.hawaii.edu/gmt/html/man/gmtdefaults.html>`_)
   variables. See the documentation for the :py:meth:`GMT.default_layout` method for details.
 
 ----
