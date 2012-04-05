@@ -1,0 +1,835 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Reference Manual &mdash; GmtPy v0.1 Manual</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="search" type="application/opensearchdescription+xml"
+          title="Search within GmtPy v0.1 Manual"
+          href="_static/opensearch.xml"/>
+    <link rel="top" title="GmtPy v0.1 Manual" href="index.html" />
+    <link rel="next" title="Random remarks" href="remarks.html" />
+    <link rel="prev" title="Tutorial" href="tutorial.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="remarks.html" title="Random remarks"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">GmtPy v0.1 Manual</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+          <div class="body">
+            
+  <div class="section" id="reference-manual">
+<h1>Reference Manual<a class="headerlink" href="#reference-manual" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-gmtpy">
+<span id="the-gmtpy-module"></span><h2>The <a class="reference internal" href="#module-gmtpy" title="gmtpy"><tt class="xref py py-mod docutils literal"><span class="pre">gmtpy</span></tt></a> module<a class="headerlink" href="#module-gmtpy" title="Permalink to this headline">¶</a></h2>
+<p>A Python interface to GMT.</p>
+<dl class="class">
+<dt id="gmtpy.GMT">
+<em class="property">class </em><tt class="descname">GMT</tt><big>(</big><em>config=None</em>, <em>kontinue=None</em>, <em>version='newest'</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#GMT"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.GMT" title="Permalink to this definition">¶</a></dt>
+<dd><p>A thin wrapper to GMT command execution.</p>
+<p>A dict <cite>config</cite> may be given to override some of the default GMT
+parameters. The <cite>version</cite> argument may be used to select a specific GMT
+version, which should be used with this GMT instance. The selected
+version of GMT has to be installed on the system, must be supported by
+gmtpy and gmtpy must know where to find it.</p>
+<p>Each instance of this class is used for the task of producing one PS or PDF
+output file.</p>
+<p>Output of a series of GMT commands is accumulated in memory and can then be
+saved as PS or PDF file using the <a class="reference internal" href="#gmtpy.GMT.save" title="gmtpy.GMT.save"><tt class="xref py py-meth docutils literal"><span class="pre">save()</span></tt></a> method.</p>
+<p>GMT commands are accessed as method calls to instances of this class. See
+the <a class="reference internal" href="#gmtpy.GMT.__getattr__" title="gmtpy.GMT.__getattr__"><tt class="xref py py-meth docutils literal"><span class="pre">__getattr__()</span></tt></a> method for details on how the method&#8217;s
+arguments are translated into options and arguments for the GMT command.</p>
+<p>Associated with each instance of this class, a temporary directory is
+created, where temporary files may be created, and which is automatically
+deleted, when the object is destroyed. The <a class="reference internal" href="#gmtpy.GMT.tempfilename" title="gmtpy.GMT.tempfilename"><tt class="xref py py-meth docutils literal"><span class="pre">tempfilename()</span></tt></a> method
+may be used to get a random filename in the instance&#8217;s temporary directory.</p>
+<p>Any .gmtdefaults files are ignored. The GMT class uses a fixed
+set of defaults, which may be altered via an argument to the constructor.
+If possible, GMT is run in &#8216;isolation mode&#8217;, which was introduced with GMT
+version 4.2.2, by setting <cite>GMT_TMPDIR</cite> to the instance&#8217;s  temporary
+directory.  With earlier versions of GMT, problems may arise with parallel
+execution of more than one GMT instance.</p>
+<p>Each instance of the GMT class may pick a specific version of GMT which
+shall be used, so that, if multiple versions of GMT are installed on the
+system, different versions of GMT can be used simultaneously such that
+backward compatibility of the scripts can be maintained.</p>
+<dl class="method">
+<dt id="gmtpy.GMT.__getattr__">
+<tt class="descname">__getattr__</tt><big>(</big><em>command</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#GMT.__getattr__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.GMT.__getattr__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maps to call self._gmtcommand(command, *addargs, **kwargs).</p>
+<p>Execute arbitrary GMT command.</p>
+<p>Run a GMT command and by default append its postscript output to the
+output file maintained by the GMT instance on which this method is
+called.</p>
+<p>Except for a few keyword arguments listed below, any <cite>kwargs</cite> and
+<cite>addargs</cite> are converted into command line options and arguments and
+passed to the GMT command. Numbers in keyword arguments are converted
+into strings. E.g. <tt class="docutils literal"><span class="pre">S=10</span></tt> is translated into <tt class="docutils literal"><span class="pre">'-S10'</span></tt>. Tuples of numbers or
+strings are converted into strings where the elements of the tuples are
+separated by slashes &#8216;/&#8217;. E.g. <tt class="docutils literal"><span class="pre">R=(10,10,20,20)</span></tt> is translated into
+<tt class="docutils literal"><span class="pre">'-R10/10/20/20'</span></tt>. Options with a boolean argument are only appended to
+the GMT command, if their values are True.</p>
+<p>If no output redirection is in effect, the -K and -O options are handled
+by gmtpy and thus should not be specified. Use <tt class="docutils literal"><span class="pre">out_discard=True</span></tt> if you
+don&#8217;t want -K or -O beeing added, but are not interested in the output.</p>
+<p>The standard input of the GMT process is fed by data selected with one 
+of the following <cite>in_*</cite> keyword arguments:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="19%" />
+<col width="81%" />
+</colgroup>
+<tbody valign="top">
+<tr><td><cite>in_stream</cite></td>
+<td>Data is read from an open file like object.</td>
+</tr>
+<tr><td><cite>in_filename</cite></td>
+<td>Data is read from the given file.</td>
+</tr>
+<tr><td><cite>in_string</cite></td>
+<td>String content is dumped to the process.</td>
+</tr>
+<tr><td><cite>in_columns</cite></td>
+<td>A 2D nested iterable whose elements can be accessed as
+<tt class="docutils literal"><span class="pre">in_columns[icolumn][irow]</span></tt> is converted into an ascii
+table, which is fed to the process.</td>
+</tr>
+<tr><td><cite>in_rows</cite></td>
+<td>A 2D nested iterable whos elements can be accessed as
+<tt class="docutils literal"><span class="pre">in_rows[irow][icolumn]</span></tt> is converted into an ascii table,
+which is fed to the process.</td>
+</tr>
+</tbody>
+</table>
+<p>The standard output of the GMT process may be redirected by one of the 
+following options:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="17%" />
+<col width="83%" />
+</colgroup>
+<tbody valign="top">
+<tr><td>out_stream</td>
+<td>Output is fed to an open file like object.</td>
+</tr>
+<tr><td>out_filename</td>
+<td>Output is dumped to the given file.</td>
+</tr>
+<tr><td>out_discard</td>
+<td>If True, output is dumped to <tt class="file docutils literal"><span class="pre">/dev/null</span></tt>.</td>
+</tr>
+</tbody>
+</table>
+<p>Additional keyword arguments:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="25%" />
+<col width="75%" />
+</colgroup>
+<tbody valign="top">
+<tr><td>config</td>
+<td>Dict with GMT defaults which override the currently
+active set of defaults exclusively during this call.</td>
+</tr>
+<tr><td>finish</td>
+<td>If True, the postscript file, which is maintained by the
+GMT instance is finished, and no further plotting is
+allowed.</td>
+</tr>
+<tr><td>suppress_defaults</td>
+<td>Suppress appending of the <tt class="docutils literal"><span class="pre">'+gmtdefaults'</span></tt> option to the
+command.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.GMT.tempfilename">
+<tt class="descname">tempfilename</tt><big>(</big><em>name=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#GMT.tempfilename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.GMT.tempfilename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get filename for temporary file in the private temp directory.</p>
+<p>If no <cite>name</cite> argument is given, a random name is picked. If <cite>name</cite> is
+given, returns a path ending in that <cite>name</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.GMT.tempfile">
+<tt class="descname">tempfile</tt><big>(</big><em>name=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#GMT.tempfile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.GMT.tempfile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create and open a file in the private temp directory.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.GMT.save">
+<tt class="descname">save</tt><big>(</big><em>filename=None</em>, <em>bbox=None</em>, <em>raster_dpi=150</em>, <em>raster_antialias=True</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#GMT.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.GMT.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finish and save figure as PDF, PS or PPM file.</p>
+<p>If filename ends with <tt class="docutils literal"><span class="pre">'.pdf'</span></tt> a PDF file is created by piping the 
+GMT output through <strong class="program">epstopdf</strong>.</p>
+<p>If filename ends with <tt class="docutils literal"><span class="pre">'.ppm'</span></tt> a PPM file is created by running 
+<strong class="program">epstopdf</strong> and <strong class="program">pdftoppm</strong>. <cite>raster_dpi</cite> specifies the resolution, which
+is passed to <strong class="program">pdftoppm</strong>.</p>
+<p>The bounding box is set according to the values given in <cite>bbox</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.GMT.get_command_log">
+<tt class="descname">get_command_log</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gmtpy.html#GMT.get_command_log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.GMT.get_command_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the command log.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.GMT.page_size_points">
+<tt class="descname">page_size_points</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gmtpy.html#GMT.page_size_points"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.GMT.page_size_points" title="Permalink to this definition">¶</a></dt>
+<dd><p>Try to get paper size of output postscript file in points.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.GMT.default_layout">
+<tt class="descname">default_layout</tt><big>(</big><em>with_palette=False</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#GMT.default_layout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.GMT.default_layout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a default layout for the output page.</p>
+<p>One of three different layouts is choosen, depending on the <a class="reference external" href="http://gmt.soest.hawaii.edu/gmt/html/man/gmtdefaults.html#PAPER_MEDIA">PAPER_MEDIA</a>
+setting in the GMT configuration dict.</p>
+<p>If <cite>PAPER_MEDIA</cite> ends with a <tt class="docutils literal"><span class="pre">'+'</span></tt> (EPS output is selected), a
+<a class="reference internal" href="#gmtpy.FrameLayout" title="gmtpy.FrameLayout"><tt class="xref py py-class docutils literal"><span class="pre">FrameLayout</span></tt></a> is centered on the page, whose size is controlled by its
+center widget&#8217;s size plus the margins of the <a class="reference internal" href="#gmtpy.FrameLayout" title="gmtpy.FrameLayout"><tt class="xref py py-class docutils literal"><span class="pre">FrameLayout</span></tt></a>.</p>
+<p>If <cite>PAPER_MEDIA</cite> indicates, that a custom page size is wanted by
+starting with <tt class="docutils literal"><span class="pre">'Custom_'</span></tt>, a <a class="reference internal" href="#gmtpy.FrameLayout" title="gmtpy.FrameLayout"><tt class="xref py py-class docutils literal"><span class="pre">FrameLayout</span></tt></a> is used to fill
+the complete page. The center widget&#8217;s size is then controlled by the
+page&#8217;s size minus the margins of the <a class="reference internal" href="#gmtpy.FrameLayout" title="gmtpy.FrameLayout"><tt class="xref py py-class docutils literal"><span class="pre">FrameLayout</span></tt></a>.</p>
+<p>In any other case, two FrameLayouts are nested, such that the outer
+layout attaches a 1 cm (printer) margin around the complete page, and
+the inner FrameLayout&#8217;s center widget takes up as much space as possible
+under the constraint, that an aspect ratio of 1/golden_ratio is
+preserved.</p>
+<p>In any case, a reference to the innermost <a class="reference internal" href="#gmtpy.FrameLayout" title="gmtpy.FrameLayout"><tt class="xref py py-class docutils literal"><span class="pre">FrameLayout</span></tt></a> instance is
+returned. The top-level layout can be accessed by calling <a class="reference internal" href="#gmtpy.Widget.get_parent" title="gmtpy.Widget.get_parent"><tt class="xref py py-meth docutils literal"><span class="pre">Widget.get_parent()</span></tt></a> on
+the returned layout.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.GMT.draw_layout">
+<tt class="descname">draw_layout</tt><big>(</big><em>layout</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#GMT.draw_layout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.GMT.draw_layout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use psxy to draw layout; for debugging</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gmtpy.Guru">
+<em class="property">class </em><tt class="descname">Guru</tt><a class="reference internal" href="_modules/gmtpy.html#Guru"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Guru" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract base class providing template interpolation, accessible as attributes.</p>
+<p>Classes deriving from this one, have to implement a <tt class="xref py py-meth docutils literal"><span class="pre">get_params()</span></tt> method, which is
+called to get a dict to do ordinary <tt class="docutils literal"><span class="pre">&quot;%(key)x&quot;</span></tt>-substitutions. The deriving class
+must also provide a dict with the templates.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="gmtpy.AutoScaler">
+<em class="property">class </em><tt class="descname">AutoScaler</tt><big>(</big><em>approx_ticks=7.0</em>, <em>mode='auto'</em>, <em>exp=None</em>, <em>snap=False</em>, <em>inc=None</em>, <em>space=0.0</em>, <em>exp_factor=3</em>, <em>no_exp_interval=(-3</em>, <em>5)</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#AutoScaler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.AutoScaler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tunable 1D autoscaling based on data range.</p>
+<p>Instances of this class may be used to determine nice minima, maxima and
+increments for ax annotations, as well as suitable common exponents for
+notation.</p>
+<p>The autoscaling process is guided by the following public attributes:</p>
+<blockquote>
+<div><dl class="attribute">
+<dt id="gmtpy.AutoScaler.approx_ticks">
+<tt class="descname">approx_ticks</tt><a class="headerlink" href="#gmtpy.AutoScaler.approx_ticks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Approximate number of increment steps (tickmarks) to generate.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gmtpy.AutoScaler.mode">
+<tt class="descname">mode</tt><a class="headerlink" href="#gmtpy.AutoScaler.mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mode of operation: one of <tt class="docutils literal"><span class="pre">'auto'</span></tt>, <tt class="docutils literal"><span class="pre">'min-max'</span></tt>, <tt class="docutils literal"><span class="pre">'0-max'</span></tt>, <tt class="docutils literal"><span class="pre">'min-0'</span></tt>,
+<tt class="docutils literal"><span class="pre">'symmetric'</span></tt> or <tt class="docutils literal"><span class="pre">'off'</span></tt>.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="23%" />
+<col width="77%" />
+</colgroup>
+<thead valign="bottom">
+<tr><th class="head">mode</th>
+<th class="head">description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr><td><tt class="docutils literal"><span class="pre">'auto'</span></tt>:</td>
+<td>Look at data range and choose one of the choices below.</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">'min-max'</span></tt>:</td>
+<td>Output range is selected to include data range.</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">'0-max'</span></tt>:</td>
+<td>Output range shall start at zero and end at data max.</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">'min-0'</span></tt>:</td>
+<td>Output range shall start at data min and end at zero.</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">'symmetric'</span></tt>:</td>
+<td>Output range shall by symmetric by zero.</td>
+</tr>
+<tr><td><tt class="docutils literal"><span class="pre">'off'</span></tt>:</td>
+<td>Similar to <tt class="docutils literal"><span class="pre">'min-max'</span></tt>, but snap and space are
+disabled, such that the output range always exactly
+matches the data range.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gmtpy.AutoScaler.exp">
+<tt class="descname">exp</tt><a class="headerlink" href="#gmtpy.AutoScaler.exp" title="Permalink to this definition">¶</a></dt>
+<dd><p>If defined, override automatically determined exponent for notation by
+the given value.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gmtpy.AutoScaler.snap">
+<tt class="descname">snap</tt><a class="headerlink" href="#gmtpy.AutoScaler.snap" title="Permalink to this definition">¶</a></dt>
+<dd><p>If set to True, snap output range to multiples of increment. This
+parameter has no effect, if mode is set to <tt class="docutils literal"><span class="pre">'off'</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gmtpy.AutoScaler.inc">
+<tt class="descname">inc</tt><a class="headerlink" href="#gmtpy.AutoScaler.inc" title="Permalink to this definition">¶</a></dt>
+<dd><p>If defined, override automatically determined tick increment by the
+given value.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gmtpy.AutoScaler.space">
+<tt class="descname">space</tt><a class="headerlink" href="#gmtpy.AutoScaler.space" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add some padding to the range. The value given, is the fraction by which
+the output range is increased on each side. If mode is <tt class="docutils literal"><span class="pre">'0-max'</span></tt> or <tt class="docutils literal"><span class="pre">'min-0'</span></tt>,
+the end at zero is kept fixed at zero. This parameter has no effect if 
+mode is set to <tt class="docutils literal"><span class="pre">'off'</span></tt>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gmtpy.AutoScaler.exp_factor">
+<tt class="descname">exp_factor</tt><a class="headerlink" href="#gmtpy.AutoScaler.exp_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exponent of notation is chosen to be a multiple of this value.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<tt class="descname">no_exp_interval:</tt></dt>
+<dd><p>Range of exponent, for which no exponential notation is allowed.</p>
+</dd></dl>
+
+</div></blockquote>
+<dl class="method">
+<dt id="gmtpy.AutoScaler.make_scale">
+<tt class="descname">make_scale</tt><big>(</big><em>data_range</em>, <em>override_mode=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#AutoScaler.make_scale"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.AutoScaler.make_scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get nice minimum, maximum and increment for given data range.</p>
+<p>Returns <tt class="docutils literal"><span class="pre">(minimum,</span> <span class="pre">maximum,</span> <span class="pre">increment)</span></tt> or <tt class="docutils literal"><span class="pre">(maximum,</span> <span class="pre">minimum,</span> <span class="pre">-increment)</span></tt>,
+depending on whether data_range is <tt class="docutils literal"><span class="pre">(data_min,</span> <span class="pre">data_max)</span></tt> or <tt class="docutils literal"><span class="pre">(data_max,</span>
+<span class="pre">data_min)</span></tt>. If <cite>override_mode</cite> is defined, the mode attribute is
+temporarily overridden by the given value.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.AutoScaler.make_exp">
+<tt class="descname">make_exp</tt><big>(</big><em>x</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#AutoScaler.make_exp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.AutoScaler.make_exp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get nice exponent for notation of <cite>x</cite>.</p>
+<p>For ax annotations, give tick increment as <cite>x</cite>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.AutoScaler.guess_autoscale_mode">
+<tt class="descname">guess_autoscale_mode</tt><big>(</big><em>data_min</em>, <em>data_max</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#AutoScaler.guess_autoscale_mode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.AutoScaler.guess_autoscale_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Guess mode of operation, based on data range.</p>
+<p>Used to map <tt class="docutils literal"><span class="pre">'auto'</span></tt> mode to <tt class="docutils literal"><span class="pre">'0-max'</span></tt>, <tt class="docutils literal"><span class="pre">'min-0'</span></tt>, <tt class="docutils literal"><span class="pre">'min-max'</span></tt> or <tt class="docutils literal"><span class="pre">'symmetric'</span></tt>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gmtpy.Ax">
+<em class="property">class </em><tt class="descname">Ax</tt><big>(</big><em>label=''</em>, <em>unit=''</em>, <em>scaled_unit_factor=1.0</em>, <em>scaled_unit=''</em>, <em>limits=None</em>, <em>masking=True</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Ax"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Ax" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ax description with autoscaling capabilities.</p>
+<p>The ax is described by the <a class="reference internal" href="#gmtpy.AutoScaler" title="gmtpy.AutoScaler"><tt class="xref py py-class docutils literal"><span class="pre">AutoScaler</span></tt></a> public attributes, plus the following
+additional attributes (with default values given in paranthesis):</p>
+<blockquote>
+<div><dl class="attribute">
+<dt id="gmtpy.Ax.label">
+<tt class="descname">label</tt><a class="headerlink" href="#gmtpy.Ax.label" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ax label (without unit).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gmtpy.Ax.unit">
+<tt class="descname">unit</tt><a class="headerlink" href="#gmtpy.Ax.unit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Physical unit of the data attached to this ax.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gmtpy.Ax.scaled_unit">
+<tt class="descname">scaled_unit</tt><a class="headerlink" href="#gmtpy.Ax.scaled_unit" title="Permalink to this definition">¶</a></dt>
+<dd><p>(see below)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gmtpy.Ax.scaled_unit_factor">
+<tt class="descname">scaled_unit_factor</tt><a class="headerlink" href="#gmtpy.Ax.scaled_unit_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scaled physical unit and factor between unit and scaled_unit such that</p>
+<blockquote>
+<div>unit = scaled_unit_factor x scaled_unit.</div></blockquote>
+<p>(E.g. if unit is &#8216;m&#8217; and data is in the range of nanometers, you may
+want to set the scaled_unit to &#8216;nm&#8217; and the scaled_unit_factor to 1e9.)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gmtpy.Ax.limits">
+<tt class="descname">limits</tt><a class="headerlink" href="#gmtpy.Ax.limits" title="Permalink to this definition">¶</a></dt>
+<dd><p>If defined, fix range of ax to limits=(min,max).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gmtpy.Ax.masking">
+<tt class="descname">masking</tt><a class="headerlink" href="#gmtpy.Ax.masking" title="Permalink to this definition">¶</a></dt>
+<dd><p>If true and if there is a limit on the ax, while calculating ranges, the
+data points are masked such that data points outside of this axes limits
+are not used to determine the range of another dependant ax.</p>
+</dd></dl>
+
+</div></blockquote>
+<dl class="method">
+<dt id="gmtpy.Ax.label_str">
+<tt class="descname">label_str</tt><big>(</big><em>exp</em>, <em>unit</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Ax.label_str"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Ax.label_str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get label string including the unit and multiplier.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Ax.make_params">
+<tt class="descname">make_params</tt><big>(</big><em>data_range</em>, <em>ax_projection=False</em>, <em>override_mode=None</em>, <em>override_scaled_unit_factor=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Ax.make_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Ax.make_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get minimum, maximum, increment and label string for ax display.&#8217;</p>
+<p>Returns minimum, maximum, increment and label string including unit and
+multiplier for given data range.</p>
+<p>If <cite>ax_projection</cite> is True, values suitable to be displayed on the ax are
+returned, e.g. min, max and inc are returned in scaled units. Otherwise
+the values are returned in the original units, without any scaling applied.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gmtpy.ScaleGuru">
+<em class="property">class </em><tt class="descname">ScaleGuru</tt><big>(</big><em>data_tuples=None</em>, <em>axes=None</em>, <em>aspect=None</em>, <em>percent_interval=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#ScaleGuru"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.ScaleGuru" title="Permalink to this definition">¶</a></dt>
+<dd><p>2D/3D autoscaling and ax annotation facility.</p>
+<p>Instances of this class provide automatic determination of plot ranges, tick
+increments and scaled annotations, as well as label/unit handling. It can in
+particular be used to automatically generate the -R and -B option arguments,
+which are required for most GMT commands.</p>
+<p>It extends the functionality of the <a class="reference internal" href="#gmtpy.Ax" title="gmtpy.Ax"><tt class="xref py py-class docutils literal"><span class="pre">Ax</span></tt></a> and
+<a class="reference internal" href="#gmtpy.AutoScaler" title="gmtpy.AutoScaler"><tt class="xref py py-class docutils literal"><span class="pre">AutoScaler</span></tt></a> classes at the level, where it can not be handled
+anymore by looking at a single dimension of the dataset&#8217;s data, e.g.:</p>
+<ul class="simple">
+<li>The ability to impose a fixed aspect ratio between two axes.</li>
+<li>Recalculation of data range on non-limited axes, when there are
+limits imposed on other axes.</li>
+</ul>
+<dl class="method">
+<dt id="gmtpy.ScaleGuru.get_params">
+<tt class="descname">get_params</tt><big>(</big><em>ax_projection=False</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#ScaleGuru.get_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.ScaleGuru.get_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get dict with output parameters.</p>
+<p>For each data dimension, ax minimum, maximum, increment and a label
+string (including unit and exponential factor) are determined. E.g. in
+for the first dimension the output dict will contain the keys <tt class="docutils literal"><span class="pre">'xmin'</span></tt>,
+<tt class="docutils literal"><span class="pre">'xmax'</span></tt>, <tt class="docutils literal"><span class="pre">'xinc'</span></tt>, and <tt class="docutils literal"><span class="pre">'xlabel'</span></tt>.</p>
+<p>Normally, values corresponding to the scaling of the raw data are
+produced, but if <cite>ax_projection</cite> is <tt class="xref docutils literal"><span class="pre">True</span></tt>, values which are suitable to be
+printed on the axes are returned. This means that in the latter case,
+the <a class="reference internal" href="#gmtpy.Ax.scaled_unit" title="gmtpy.Ax.scaled_unit"><tt class="xref py py-attr docutils literal"><span class="pre">Ax.scaled_unit</span></tt></a> and <a class="reference internal" href="#gmtpy.Ax.scaled_unit_factor" title="gmtpy.Ax.scaled_unit_factor"><tt class="xref py py-attr docutils literal"><span class="pre">Ax.scaled_unit_factor</span></tt></a> attributes as set on the axes
+are respected and that a common 10^x factor is factored out and put to
+the label string.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gmtpy.Widget">
+<em class="property">class </em><tt class="descname">Widget</tt><big>(</big><em>horizontal=None</em>, <em>vertical=None</em>, <em>parent=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class of the gmtpy layout system.</p>
+<p>The Widget class provides the basic functionality for the nesting and
+placing of elements on the output page, and maintains the sizing policies of
+each element. Each of the layouts defined in gmtpy is itself a Widget.</p>
+<p>Sizing of the widget is controlled by <a class="reference internal" href="#gmtpy.Widget.get_min_size" title="gmtpy.Widget.get_min_size"><tt class="xref py py-meth docutils literal"><span class="pre">get_min_size()</span></tt></a> and
+<a class="reference internal" href="#gmtpy.Widget.get_grow" title="gmtpy.Widget.get_grow"><tt class="xref py py-meth docutils literal"><span class="pre">get_grow()</span></tt></a> which should be overloaded in derived classes. The
+basic behaviour of a Widget instance is to have a vertical and a horizontal
+minimum size which default to zero, as well as a vertical and a horizontal
+desire to grow, represented by floats, which default to 1.0. Additionally an
+aspect ratio constraint may be imposed on the Widget.</p>
+<p>After layouting, the widget provides its width, height, x-offset and
+y-offset in various ways. Via the Guru interface (see <a class="reference internal" href="#gmtpy.Guru" title="gmtpy.Guru"><tt class="xref py py-class docutils literal"><span class="pre">Guru</span></tt></a>
+class), templates for the -X, -Y and -J option arguments used by GMT
+arguments are provided.  The defaults are suitable for plotting of linear
+(-JX) plots. Other projections can be selected by giving an appropriate &#8216;J&#8217;
+template, or by manual construction of the -J option, e.g. by utilizing the
+<a class="reference internal" href="#gmtpy.Widget.width" title="gmtpy.Widget.width"><tt class="xref py py-meth docutils literal"><span class="pre">width()</span></tt></a> and <a class="reference internal" href="#gmtpy.Widget.height" title="gmtpy.Widget.height"><tt class="xref py py-meth docutils literal"><span class="pre">height()</span></tt></a> methods. The <a class="reference internal" href="#gmtpy.Widget.bbox" title="gmtpy.Widget.bbox"><tt class="xref py py-meth docutils literal"><span class="pre">bbox()</span></tt></a> method
+can be used to create a PostScript bounding box from the widgets border,
+e.g. for use in the <tt class="xref py py-meth docutils literal"><span class="pre">save()</span></tt> method of <a class="reference internal" href="#gmtpy.GMT" title="gmtpy.GMT"><tt class="xref py py-class docutils literal"><span class="pre">GMT</span></tt></a> instances.</p>
+<p>The convention is, that all sizes are given in PostScript points. Conversion
+factors are provided as constants <tt class="xref py py-const docutils literal"><span class="pre">inch</span></tt> and <tt class="xref py py-const docutils literal"><span class="pre">cm</span></tt> in the gmtpy module.</p>
+<dl class="method">
+<dt id="gmtpy.Widget.set_parent">
+<tt class="descname">set_parent</tt><big>(</big><em>parent</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.set_parent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.set_parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the parent widget.</p>
+<p>This method should not be called directly. The <tt class="xref py py-meth docutils literal"><span class="pre">set_widget()</span></tt> methods are 
+responsible for calling this.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.get_parent">
+<tt class="descname">get_parent</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.get_parent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.get_parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the widgets parent widget.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.get_root">
+<tt class="descname">get_root</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.get_root"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.get_root" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the root widget in the layout hierarchy.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.set_horizontal">
+<tt class="descname">set_horizontal</tt><big>(</big><em>minimal=None</em>, <em>grow=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.set_horizontal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.set_horizontal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the horizontal sizing policy of the Widget.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>minimal</strong> &#8211; new minimal width of the widget</li>
+<li><strong>grow</strong> &#8211; new horizontal grow disire of the widget</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.set_vertical">
+<tt class="descname">set_vertical</tt><big>(</big><em>minimal=None</em>, <em>grow=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.set_vertical"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.set_vertical" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the horizontal sizing policy of the Widget.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>minimal</strong> &#8211; new minimal height of the widget</li>
+<li><strong>grow</strong> &#8211; new vertical grow disire of the widget</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.set_aspect">
+<tt class="descname">set_aspect</tt><big>(</big><em>aspect=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.set_aspect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.set_aspect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set aspect constraint on the widget.</p>
+<p>The aspect is given as height divided by width.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.set_policy">
+<tt class="descname">set_policy</tt><big>(</big><em>minimal=(None</em>, <em>None)</em>, <em>grow=(None</em>, <em>None)</em>, <em>aspect=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.set_policy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.set_policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shortcut to set sizing and aspect constraints in a single method call.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.legalize">
+<tt class="descname">legalize</tt><big>(</big><em>size</em>, <em>offset</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.legalize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.legalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get legal size for widget.</p>
+<p>Returns: (new_size, new_offset)</p>
+<p>Given a box as <cite>size</cite> and <cite>offset</cite>, return <cite>new_size</cite> and <cite>new_offset</cite>, such
+that the widget&#8217;s sizing and aspect constraints are fullfilled.
+The returned box is centered on the given input box.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.get_min_size">
+<tt class="descname">get_min_size</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.get_min_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.get_min_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get minimum size of widget.</p>
+<p>Used by the layout managers. Should be overloaded in derived classes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.get_grow">
+<tt class="descname">get_grow</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.get_grow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.get_grow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get widget&#8217;s desire to grow.</p>
+<p>Used by the layout managers. Should be overloaded in derived classes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.set_size">
+<tt class="descname">set_size</tt><big>(</big><em>size</em>, <em>offset</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.set_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.set_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the widget&#8217;s current size.</p>
+<p>Should not be called directly. It is the layout manager&#8217;s responsibility
+to call this.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.get_corners">
+<tt class="descname">get_corners</tt><big>(</big><em>descend=False</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.get_corners"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.get_corners" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get coordinates of the corners of the widget.</p>
+<p>Returns list with coordinate tuples.</p>
+<p>If <cite>descend</cite> is True, the returned list will contain corner coordinates
+of all sub-widgets.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.get_sizes">
+<tt class="descname">get_sizes</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.get_sizes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.get_sizes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get sizes of this widget and all it&#8217;s children.</p>
+<p>Returns a list with size tuples.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.do_layout">
+<tt class="descname">do_layout</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.do_layout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.do_layout" title="Permalink to this definition">¶</a></dt>
+<dd><p>Triggers layouting of the widget hierarchy, if needed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.get_children">
+<tt class="descname">get_children</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.get_children"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.get_children" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get sub-widgets contained in this widget.</p>
+<p>Returns a list of widgets.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.get_size">
+<tt class="descname">get_size</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.get_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.get_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get current size and position of the widget.</p>
+<p>Triggers layouting and returns <tt class="docutils literal"><span class="pre">((width,</span> <span class="pre">height),</span> <span class="pre">(xoffset,</span> <span class="pre">yoffset))</span></tt></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.get_params">
+<tt class="descname">get_params</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.get_params"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.get_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get current size and position of the widget.</p>
+<p>Triggers layouting and returns dict with keys <tt class="docutils literal"><span class="pre">'xoffset'</span></tt>, <tt class="docutils literal"><span class="pre">'yoffset'</span></tt>,
+<tt class="docutils literal"><span class="pre">'width'</span></tt> and <tt class="docutils literal"><span class="pre">'height'</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.width">
+<tt class="descname">width</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.width"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get current width of the widget.</p>
+<p>Triggers layouting and returns width.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.height">
+<tt class="descname">height</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.height"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.height" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get current height of the widget.</p>
+<p>Triggers layouting and return height.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.bbox">
+<tt class="descname">bbox</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.bbox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.bbox" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get PostScript bounding box for this widget.</p>
+<p>Triggers layouting and returns values suitable to create PS bounding
+box, representing the widgets current size and position.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.Widget.dirtyfy">
+<tt class="descname">dirtyfy</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gmtpy.html#Widget.dirtyfy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.Widget.dirtyfy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set dirty flag on top level widget in the hierarchy.</p>
+<p>Called by various methods, to indicate, that the widget hierarchy needs
+new layouting.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gmtpy.CenterLayout">
+<em class="property">class </em><tt class="descname">CenterLayout</tt><big>(</big><em>horizontal=None</em>, <em>vertical=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#CenterLayout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.CenterLayout" title="Permalink to this definition">¶</a></dt>
+<dd><p>A layout manager which centers its single child widget.</p>
+<p>The child widget may be oversized.</p>
+<dl class="method">
+<dt id="gmtpy.CenterLayout.set_widget">
+<tt class="descname">set_widget</tt><big>(</big><em>widget=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#CenterLayout.set_widget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.CenterLayout.set_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the child widget, which shall be centered.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gmtpy.FrameLayout">
+<em class="property">class </em><tt class="descname">FrameLayout</tt><big>(</big><em>horizontal=None</em>, <em>vertical=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#FrameLayout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.FrameLayout" title="Permalink to this definition">¶</a></dt>
+<dd><p>A layout manager containing a center widget sorrounded by four margin
+widgets.</p>
+<div class="highlight-python"><pre>+---------------------------+
+|             top           |
++---------------------------+
+|      |            |       |
+| left |   center   | right |
+|      |            |       |
++---------------------------+
+|           bottom          |
++---------------------------+</pre>
+</div>
+<p>This layout manager does a little bit of extra effort to maintain the
+aspect constraint of the center widget, if this is set. It does so, by
+allowing for a bit more flexibility in the sizing of the margins. Two
+shortcut methods are provided to set the margin sizes in one shot:
+<a class="reference internal" href="#gmtpy.FrameLayout.set_fixed_margins" title="gmtpy.FrameLayout.set_fixed_margins"><tt class="xref py py-meth docutils literal"><span class="pre">set_fixed_margins()</span></tt></a> and <a class="reference internal" href="#gmtpy.FrameLayout.set_min_margins" title="gmtpy.FrameLayout.set_min_margins"><tt class="xref py py-meth docutils literal"><span class="pre">set_min_margins()</span></tt></a>. The first sets
+the margins to fixed sizes, while the second gives them a minimal size and
+a (neglectably) small desire to grow. Using the latter may be useful when
+setting an aspect constraint on the center widget, because this way the
+maximum size of the center widget may be controlled without creating empty
+spaces between the widgets.</p>
+<dl class="method">
+<dt id="gmtpy.FrameLayout.set_fixed_margins">
+<tt class="descname">set_fixed_margins</tt><big>(</big><em>left</em>, <em>right</em>, <em>top</em>, <em>bottom</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#FrameLayout.set_fixed_margins"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.FrameLayout.set_fixed_margins" title="Permalink to this definition">¶</a></dt>
+<dd><p>Give margins fixed size constraints.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.FrameLayout.set_min_margins">
+<tt class="descname">set_min_margins</tt><big>(</big><em>left</em>, <em>right</em>, <em>top</em>, <em>bottom</em>, <em>grow=0.0001</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#FrameLayout.set_min_margins"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.FrameLayout.set_min_margins" title="Permalink to this definition">¶</a></dt>
+<dd><p>Give margins a minimal size and the possibility to grow.</p>
+<p>The desire to grow is set to a very small number.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.FrameLayout.set_widget">
+<tt class="descname">set_widget</tt><big>(</big><em>which='center'</em>, <em>widget=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#FrameLayout.set_widget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.FrameLayout.set_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set one of the sub-widgets.</p>
+<p><cite>which</cite> should be one of <tt class="docutils literal"><span class="pre">'left'</span></tt>, <tt class="docutils literal"><span class="pre">'right'</span></tt>, <tt class="docutils literal"><span class="pre">'top'</span></tt>, <tt class="docutils literal"><span class="pre">'bottom'</span></tt> or <tt class="docutils literal"><span class="pre">'center'</span></tt>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.FrameLayout.get_widget">
+<tt class="descname">get_widget</tt><big>(</big><em>which='center'</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#FrameLayout.get_widget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.FrameLayout.get_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get one of the sub-widgets.</p>
+<p><cite>which</cite> should be one of <tt class="docutils literal"><span class="pre">'left'</span></tt>, <tt class="docutils literal"><span class="pre">'right'</span></tt>, <tt class="docutils literal"><span class="pre">'top'</span></tt>, <tt class="docutils literal"><span class="pre">'bottom'</span></tt> or <tt class="docutils literal"><span class="pre">'center'</span></tt>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gmtpy.GridLayout">
+<em class="property">class </em><tt class="descname">GridLayout</tt><big>(</big><em>nx=2</em>, <em>ny=2</em>, <em>horizontal=None</em>, <em>vertical=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#GridLayout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.GridLayout" title="Permalink to this definition">¶</a></dt>
+<dd><p>A layout manager which arranges its sub-widgets in a grid.</p>
+<p>The grid spacing is flexible and based on the sizing policies of the
+contained sub-widgets. If an equidistant grid is needed, the sizing policies
+of the sub-widgets have to be set equally.</p>
+<p>The height of each row and the width of each column is derived from the
+sizing policy of the largest sub-widget in the row or column in question.
+The algorithm is not very sophisticated, so conflicting sizing policies
+might not be resolved optimally.</p>
+<dl class="method">
+<dt id="gmtpy.GridLayout.set_widget">
+<tt class="descname">set_widget</tt><big>(</big><em>ix</em>, <em>iy</em>, <em>widget=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#GridLayout.set_widget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.GridLayout.set_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set one of the sub-widgets.</p>
+<p>Sets the sub-widget in column <cite>ix</cite> and row <cite>iy</cite>. The indices are counted
+from zero.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gmtpy.GridLayout.get_widget">
+<tt class="descname">get_widget</tt><big>(</big><em>ix</em>, <em>iy</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#GridLayout.get_widget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.GridLayout.get_widget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get one of the sub-widgets.</p>
+<p>Gets the sub-widget from column <cite>ix</cite> and row <cite>iy</cite>. The indices are
+counted from zero.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="gmtpy.color">
+<tt class="descname">color</tt><big>(</big><em>x=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#color"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.color" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a string for GMT option arguments expecting a color.</p>
+<p>If <cite>x</cite> is None, a random color is returned. If it is an integer, the corresponding
+<tt class="docutils literal"><span class="pre">gmtpy.graph_colors[x]</span></tt> or black returned. If it is a string and the corresponding
+<tt class="docutils literal"><span class="pre">gmtpy.tango_colors[x]</span></tt> exists, this is returned, or the string is passed through.
+If <cite>x</cite> is a tuple, it is transformed into the string form which GMT expects.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="gmtpy.color_tup">
+<tt class="descname">color_tup</tt><big>(</big><em>x=None</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#color_tup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.color_tup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="gmtpy.loadgrd">
+<tt class="descname">loadgrd</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#loadgrd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.loadgrd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read COARDS compliant netcdf (grd) file.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="gmtpy.savegrd">
+<tt class="descname">savegrd</tt><big>(</big><em>x</em>, <em>y</em>, <em>z</em>, <em>filename</em>, <em>title=None</em>, <em>naming='xy'</em><big>)</big><a class="reference internal" href="_modules/gmtpy.html#savegrd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gmtpy.savegrd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write COARDS compliant netcdf (grd) file.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="remarks.html" title="Random remarks"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial"
+             >previous</a> |</li>
+        <li><a href="index.html">GmtPy v0.1 Manual</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Sebastian Heimann.
+    </div>
+  </body>
+</html>

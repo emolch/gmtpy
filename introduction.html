@@ -1,0 +1,127 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Introduction &mdash; GmtPy v0.1 Manual</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="search" type="application/opensearchdescription+xml"
+          title="Search within GmtPy v0.1 Manual"
+          href="_static/opensearch.xml"/>
+    <link rel="top" title="GmtPy v0.1 Manual" href="index.html" />
+    <link rel="next" title="Installation" href="install.html" />
+    <link rel="prev" title="GmtPy - A Python interface to GMT" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="install.html" title="Installation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="GmtPy - A Python interface to GMT"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">GmtPy v0.1 Manual</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+          <div class="body">
+            
+  <div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="http://gmt.soest.hawaii.edu/">GMT</a> is a great plotting system, which is capable of producing high quality EPS graphics. As a collection of command line tools it is well suited for integration into automatic data-processing applications. However, for such a task, the use of shell scripts is by far no optimal choice. Fortunately, GMT can as well be driven from any high level programming language like in this case Python.</p>
+<p>To ease some aspects of calling GMT from Python, and to add some features I was missing in plain GMT, like autoscaling, I wrote this module. It is not related to <a class="reference external" href="http://www.geos.ed.ac.uk/homes/mhagdorn/PyGMT">PyGMT</a>, which follows a different philosophy in design.</p>
+<div class="section" id="features-and-design-goals">
+<h2>Features and design goals<a class="headerlink" href="#features-and-design-goals" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">Thin and generic wrapper to GMT command execution</p>
+<blockquote>
+<div><p>GMT commands, options and arguments are formed directly from method calls and method arguments by a clear and simple scheme. Although this attempt does not cure the ugly naming of GMT option arguments, this way it is transparent to the user and there is no need for any additional documentation to the GMT commands.</p>
+</div></blockquote>
+</li>
+<li><p class="first">Plain functional wrapping, no OO interface</p>
+<blockquote>
+<div><p>Wrapping GMT into an object oriented interface would be appealing, but making it complete would require not only a lot of code, but also a vast amount of documentation. Rewriting GMT would be more straight forward, when this was the goal.</p>
+</div></blockquote>
+</li>
+<li><p class="first">Portability and consistency assistance</p>
+<blockquote>
+<div><p>GmtPy uses its own consistent built-in set of GMT default parameters, such that running a GmtPy script on a different machine, or from a different user account should not change the appearance of the output graphics. But the script can of course override the GMT default parameters as needed.</p>
+</div></blockquote>
+</li>
+<li><p class="first">Encapsulation and parallel execution</p>
+<blockquote>
+<div><p>GmtPy automatically maintains a temporary directory for each plot to be produced. When possible, GMT&#8217;s &#8216;isolation mode&#8217; is activated and tied to the plot&#8217;s temporary directory. If used properly, this makes it painless to parallel execute several instances of a GmtPy script or to do GMT plotting in a multithreaded application.</p>
+</div></blockquote>
+</li>
+<li><p class="first">GMT version selection and backward compatibility</p>
+<blockquote>
+<div><p>Parallel installations of different versions of GMT can be used. With GmtPy it is simple to select the GMT version to be used on a per plot basis.</p>
+</div></blockquote>
+</li>
+<li><p class="first">Autoscaling as opt-in</p>
+<blockquote>
+<div><p>A highly configurable autoscaler is provided. It features automatic range calculations, automatic nice tick increment determination, labeling assistance, scaled ax annotations and some convenience options such as snap-range-to-ticks, symmetric scaling and fixing the aspect ratio.</p>
+</div></blockquote>
+</li>
+<li><p class="first">Layout management as opt-in</p>
+<blockquote>
+<div><p>An object oriented layout management system may be used to conveniently distribute subplots on a page. In its design, it is similar to the layout systems provided in various GUI toolkits. Different layout managers may be arbitrarily nested for further flexibility.</p>
+</div></blockquote>
+</li>
+<li><p class="first">Shortcut for fixing the bounding box in the output files</p>
+</li>
+<li><p class="first">Shortcut for PDF output</p>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="install.html" title="Installation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="GmtPy - A Python interface to GMT"
+             >previous</a> |</li>
+        <li><a href="index.html">GmtPy v0.1 Manual</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Sebastian Heimann.
+    </div>
+  </body>
+</html>

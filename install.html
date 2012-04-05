@@ -1,0 +1,120 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Installation &mdash; GmtPy v0.1 Manual</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="search" type="application/opensearchdescription+xml"
+          title="Search within GmtPy v0.1 Manual"
+          href="_static/opensearch.xml"/>
+    <link rel="top" title="GmtPy v0.1 Manual" href="index.html" />
+    <link rel="next" title="Tutorial" href="tutorial.html" />
+    <link rel="prev" title="Introduction" href="introduction.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="introduction.html" title="Introduction"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">GmtPy v0.1 Manual</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+          <div class="body">
+            
+  <div class="section" id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<p>GmtPy is implemented in a single source file <a class="reference external" href="https://github.com/emolch/gmtpy/blob/master/gmtpy.py">gmtpy.py</a>, which you may just
+place into the directory, where you want to use it.  However I recommend to
+install it properly, as described below.</p>
+<div class="section" id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Python</li>
+<li><a class="reference external" href="http://gmt.soest.hawaii.edu/">GMT</a> (e.g. gmt package on .deb based Linuxes)</li>
+<li><a class="reference external" href="http://numpy.scipy.org">NumPy</a> (e.g. python-numpy package on .deb based Linuxes)</li>
+<li>optional: <a class="reference external" href="http://pysclint.sourceforge.net/pycdf/">pycdf</a> (if you want to use the <tt class="xref py py-func docutils literal"><span class="pre">savegrd()</span></tt> and <tt class="xref py py-func docutils literal"><span class="pre">loadgrd()</span></tt> functions of GmtPy)</li>
+</ul>
+<p>Ensure that the <tt class="docutils literal"><span class="pre">$GMTHOME</span></tt> environment variable is set properly.</p>
+</div>
+<div class="section" id="download">
+<h2>Download<a class="headerlink" href="#download" title="Permalink to this headline">¶</a></h2>
+<p>GmtPy is <a class="reference external" href="https://github.com/emolch/gmtpy/">hosted at GitHub</a>, so the simplest way to download is to use <strong class="program">git</strong>:</p>
+<div class="highlight-python"><pre>cd ~/src/   # or wherever you keep your source packages
+git clone git://github.com/emolch/gmtpy.git gmtpy</pre>
+</div>
+<p>Alternatively, you may download GmtPy as a <a class="reference external" href="http://github.com/emolch/gmtpy/tarball/master">tar archive</a>, but updating is easier
+with the method described above.</p>
+</div>
+<div class="section" id="install">
+<h2>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h2>
+<p>To install GmtPy system wide (usually somewhere under <tt class="docutils literal"><span class="pre">/usr/local</span></tt>), simply run (from within GmtPy&#8217;s source directory):</p>
+<div class="highlight-python"><pre>sudo python setup.py install</pre>
+</div>
+<p>It is also possible to install to a custom location. To do so, use the
+<tt class="docutils literal"><span class="pre">--prefix</span></tt> option of <tt class="docutils literal"><span class="pre">setup.py</span></tt> and adjust the environment variable
+<tt class="docutils literal"><span class="pre">$PYTHONPATH</span></tt> (see <a class="reference external" href="http://docs.python.org/install/index.html">distutils documentation</a> for details).</p>
+</div>
+<div class="section" id="update">
+<h2>Update<a class="headerlink" href="#update" title="Permalink to this headline">¶</a></h2>
+<p>If you used <strong class="program">git</strong> to download GmtPy, and you would later want to update, use the
+following commands (from within GmtPy&#8217;s source directory):</p>
+<div class="highlight-python"><pre>git pull origin master
+sudo python setup.py install</pre>
+</div>
+</div>
+</div>
+
+
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="tutorial.html" title="Tutorial"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="introduction.html" title="Introduction"
+             >previous</a> |</li>
+        <li><a href="index.html">GmtPy v0.1 Manual</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Sebastian Heimann.
+    </div>
+  </body>
+</html>

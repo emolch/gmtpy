@@ -1,0 +1,441 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tutorial &mdash; GmtPy v0.1 Manual</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="search" type="application/opensearchdescription+xml"
+          title="Search within GmtPy v0.1 Manual"
+          href="_static/opensearch.xml"/>
+    <link rel="top" title="GmtPy v0.1 Manual" href="index.html" />
+    <link rel="next" title="Reference Manual" href="documentation.html" />
+    <link rel="prev" title="Installation" href="install.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="documentation.html" title="Reference Manual"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="install.html" title="Installation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">GmtPy v0.1 Manual</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+          <div class="body">
+            
+  <div class="section" id="tutorial">
+<h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<p>This tutorial assumes that you are familiar with <a class="reference external" href="http://www.python.org/">Python</a> as well as with <a class="reference external" href="http://gmt.soest.hawaii.edu/">GMT</a>. If not, to avoid frustration, you may first
+want to dive into the <a class="reference external" href="http://docs.python.org/tutorial/">Python tutorial</a> or the
+<a class="reference external" href="http://gmt.soest.hawaii.edu/gmt/html/GMT_Tutorial.html">GMT tutorial</a>.</p>
+<div class="section" id="example-1-basic-usage">
+<h2>Example 1: Basic usage<a class="headerlink" href="#example-1-basic-usage" title="Permalink to this headline">¶</a></h2>
+<p>The most basic usage of GmtPy is to use it as a replacement for plain GMT shell scripts.</p>
+<img alt="_images/example1.png" class="boxed align-center" src="_images/example1.png" />
+<p>Here is a simple shell script producing the map above with a single call to <strong class="program">pscoast</strong> (<a class="reference external" href="http://gmt.soest.hawaii.edu/gmt/html/man/pscoast.html">man</a>), which we would then like to translate into a Python script.</p>
+<div class="section" id="shell-script-version">
+<h3>Shell script version<a class="headerlink" href="#shell-script-version" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><pre>#!/bin/bash
+gmtset BASEMAP_TYPE = fancy \
+       PAPER_MEDIA = a4+ \
+       PAGE_ORIENTATION = portrait
+
+pscoast -R5/15/52/58 \
+        -JB10/55/55/60/10c \
+        -B4g4 \
+        -Df \
+        -S114/159/207 \
+        -G233/185/110 \
+        -Wthinnest &gt; example1.eps
+
+epstopdf --outfile=example1.pdf example1.eps</pre>
+</div>
+</div>
+<div class="section" id="python-version">
+<h3>Python version<a class="headerlink" href="#python-version" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># gmtpy&#39;s GMT class is used for GMT plotting:</span>
+
+<span class="kn">from</span> <span class="nn">gmtpy</span> <span class="kn">import</span> <span class="n">GMT</span>
+
+
+<span class="c"># For each graphics file to be produced, create a GMT instance.</span>
+<span class="c"># The keyword argument `config`, takes a dict with gmtdefaults</span>
+<span class="c"># variables you wish to override.</span>
+
+<span class="n">gmt</span> <span class="o">=</span> <span class="n">GMT</span><span class="p">(</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;BASEMAP_TYPE&#39;</span><span class="p">:</span><span class="s">&#39;fancy&#39;</span><span class="p">}</span> <span class="p">)</span>
+
+
+<span class="c"># Every GMT command is now accessible as a method to the GMT instance:</span>
+
+<span class="n">gmt</span><span class="o">.</span><span class="n">pscoast</span><span class="p">(</span> <span class="n">R</span><span class="o">=</span><span class="s">&#39;5/15/52/58&#39;</span><span class="p">,</span>       <span class="c"># region</span>
+             <span class="n">J</span><span class="o">=</span><span class="s">&#39;B10/55/55/60/10c&#39;</span><span class="p">,</span> <span class="c"># projection</span>
+             <span class="n">B</span><span class="o">=</span><span class="s">&#39;4g4&#39;</span><span class="p">,</span>              <span class="c"># grid</span>
+             <span class="n">D</span><span class="o">=</span><span class="s">&#39;f&#39;</span><span class="p">,</span>                <span class="c"># resolution</span>
+             <span class="n">S</span><span class="o">=</span><span class="p">(</span><span class="mi">114</span><span class="p">,</span><span class="mi">159</span><span class="p">,</span><span class="mi">207</span><span class="p">),</span>      <span class="c"># wet fill color</span>
+             <span class="n">G</span><span class="o">=</span><span class="p">(</span><span class="mi">233</span><span class="p">,</span><span class="mi">185</span><span class="p">,</span><span class="mi">110</span><span class="p">),</span>      <span class="c"># dry fill color</span>
+             <span class="n">W</span><span class="o">=</span><span class="s">&#39;thinnest&#39;</span> <span class="p">)</span>        <span class="c"># shoreline pen</span>
+
+
+<span class="c"># The PostScript output of the GMT commands is accumulated in memory,</span>
+<span class="c"># until the save method is called:</span>
+
+<span class="n">gmt</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s">&#39;example1.pdf&#39;</span><span class="p">)</span>  <span class="c"># save() looks at the filename extension</span>
+<span class="n">gmt</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s">&#39;example1.eps&#39;</span><span class="p">)</span>  <span class="c"># to determine what format should be saved.</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="python-version-without-the-comments">
+<h3>Python version without the comments<a class="headerlink" href="#python-version-without-the-comments" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">gmtpy</span> <span class="kn">import</span> <span class="n">GMT</span>
+
+<span class="n">gmt</span> <span class="o">=</span> <span class="n">GMT</span><span class="p">(</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;BASEMAP_TYPE&#39;</span><span class="p">:</span><span class="s">&#39;fancy&#39;</span><span class="p">}</span> <span class="p">)</span>
+
+<span class="n">gmt</span><span class="o">.</span><span class="n">pscoast</span><span class="p">(</span> <span class="n">R</span><span class="o">=</span><span class="s">&#39;5/15/52/58&#39;</span><span class="p">,</span>
+             <span class="n">J</span><span class="o">=</span><span class="s">&#39;B10/55/55/60/10c&#39;</span><span class="p">,</span>
+             <span class="n">B</span><span class="o">=</span><span class="s">&#39;4g4&#39;</span><span class="p">,</span>
+             <span class="n">D</span><span class="o">=</span><span class="s">&#39;f&#39;</span><span class="p">,</span>
+             <span class="n">S</span><span class="o">=</span><span class="p">(</span><span class="mi">114</span><span class="p">,</span><span class="mi">159</span><span class="p">,</span><span class="mi">207</span><span class="p">),</span>
+             <span class="n">G</span><span class="o">=</span><span class="p">(</span><span class="mi">233</span><span class="p">,</span><span class="mi">185</span><span class="p">,</span><span class="mi">110</span><span class="p">),</span>
+             <span class="n">W</span><span class="o">=</span><span class="s">&#39;thinnest&#39;</span> <span class="p">)</span>
+
+<span class="n">gmt</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s">&#39;example1.pdf&#39;</span><span class="p">)</span>
+<span class="n">gmt</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s">&#39;example1.eps&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="how-gmtpy-handles-gmtdefaults-variables">
+<h3>How GmtPy handles gmtdefaults variables<a class="headerlink" href="#how-gmtpy-handles-gmtdefaults-variables" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p class="first">GmtPy uses its own consistent built-in set of gmtdefaults parameters, such that running a GmtPy script on a different machine, or from a different user account should not change the appearance of the output graphics.</p>
+</li>
+<li><p class="first">The keyword argument <cite>config</cite> of <a class="reference internal" href="documentation.html#gmtpy.GMT" title="gmtpy.GMT"><tt class="xref py py-class docutils literal"><span class="pre">GMT</span></tt></a> takes a dict with all the <strong class="program">gmtdefaults</strong> (<a class="reference external" href="http://gmt.soest.hawaii.edu/gmt/html/man/gmtdefaults.html">man</a>) variables which you want to override.</p>
+</li>
+<li><p class="first">The defaults are selected with the hypothetical default goal of producing graphics to be included in publications or presentations. In particular, EPS output (<tt class="docutils literal"><span class="pre">PAPER_MEDIA</span> <span class="pre">=</span> <span class="pre">a4+</span></tt>) and portrait page orientation  (<tt class="docutils literal"><span class="pre">PAGE_ORIENTATION</span> <span class="pre">=</span> <span class="pre">portrait</span></tt>) are selected as defaults. You can get the complete list of defaults with:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">gmtpy</span>
+<span class="k">print</span> <span class="n">gmtpy</span><span class="o">.</span><span class="n">gmtdefaults_as_text</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">The <strong class="program">gmtset</strong> (<a class="reference external" href="http://gmt.soest.hawaii.edu/gmt/html/man/gmtset.html">man</a>) utility should not be used with GmtPy.</p>
+</li>
+<li><p class="first">GmtPy ignores any <tt class="docutils literal"><span class="pre">.gmtdefaults</span></tt> files.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="how-method-arguments-are-turned-into-command-line-arguments-by-gmtpy">
+<h3>How method arguments are turned into command line arguments by GmtPy<a class="headerlink" href="#how-method-arguments-are-turned-into-command-line-arguments-by-gmtpy" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>When GMT programs are run via methods of the <a class="reference internal" href="documentation.html#gmtpy.GMT" title="gmtpy.GMT"><tt class="xref py py-class docutils literal"><span class="pre">GMT</span></tt></a> object, any keyword arguments are translated into option arguments for the GMT program.</li>
+<li>Any non-keyword arguments are also handed over to the GMT program. So writing <tt class="docutils literal"><span class="pre">'-Df'</span></tt> is equivalent to writing <tt class="docutils literal"><span class="pre">D='f'</span></tt></li>
+<li>Numbers and everything else (except tuples and boolean values, see below and example 2) which is given as a keyword argument is turned into a string using Python&#8217;s <tt class="docutils literal"><span class="pre">str()</span></tt> function before being passed to the GMT command. So writing <tt class="docutils literal"><span class="pre">S=100.5</span></tt> is equivalent to writing <tt class="docutils literal"><span class="pre">S='100.5'</span></tt>.</li>
+<li>Tuples in the keyword arguments like <tt class="docutils literal"><span class="pre">(114,159,207)</span></tt> are translated into slash-separated strings like <tt class="docutils literal"><span class="pre">'144/159/207'</span></tt> by GmtPy.</li>
+<li>See documentation of <a class="reference internal" href="documentation.html#gmtpy.GMT.__getattr__" title="gmtpy.GMT.__getattr__"><tt class="xref py py-meth docutils literal"><span class="pre">GMT.__getattr__()</span></tt></a> for details</li>
+</ul>
+</div>
+</div>
+<div class="section" id="example-2-how-to-get-data-from-python-into-gmt">
+<h2>Example 2: How to get data from Python into GMT<a class="headerlink" href="#example-2-how-to-get-data-from-python-into-gmt" title="Permalink to this headline">¶</a></h2>
+<p>This example illustrates the use of different methods to pipe data to the GMT programs.</p>
+<img alt="_images/example2.png" class="boxed align-center" src="_images/example2.png" />
+<div class="section" id="python-code">
+<h3>Python code<a class="headerlink" href="#python-code" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">gmtpy</span> <span class="kn">import</span> <span class="n">GMT</span>
+
+<span class="n">gmt</span> <span class="o">=</span> <span class="n">GMT</span><span class="p">(</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;PAGE_COLOR&#39;</span><span class="p">:</span><span class="s">&#39;247/247/240&#39;</span><span class="p">}</span> <span class="p">)</span>
+<span class="n">gmt</span><span class="o">.</span><span class="n">psbasemap</span><span class="p">(</span> <span class="n">R</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span>
+               <span class="n">J</span><span class="o">=</span><span class="s">&#39;X</span><span class="si">%g</span><span class="s">i/</span><span class="si">%g</span><span class="s">i&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span>
+               <span class="n">B</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%g</span><span class="s">:Time:/</span><span class="si">%g</span><span class="s">:Amplitude:SWne&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="p">)</span>
+
+
+<span class="c"># Make four different datasets</span>
+
+<span class="c"># (1) a nested list, with the first dim corresponding to columns</span>
+<span class="n">data_as_columns</span> <span class="o">=</span> <span class="p">[</span> <span class="p">[</span> <span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span> <span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mf">0.5</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="p">]</span>
+
+<span class="c"># (2) a nested list, with the first dim corresponding to rows</span>
+<span class="n">data_as_rows</span> <span class="o">=</span> <span class="p">[</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mf">3.5</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span> <span class="p">]</span>
+
+<span class="c"># (3) a string containing an ascii table</span>
+<span class="n">data_as_string</span> <span class="o">=</span> <span class="s">&#39;&#39;&#39;0 5</span>
+<span class="s">1 4</span>
+<span class="s">2 3.5</span>
+<span class="s">3 4</span>
+<span class="s">4 4.5</span>
+<span class="s">5 5&#39;&#39;&#39;</span>
+
+
+<span class="c"># (4) write ascii table in a temporary file...</span>
+
+<span class="c"># Get a filename in the private tempdir of the GMT instance.</span>
+<span class="c"># Files in that directory get deleted automatically.</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="n">gmt</span><span class="o">.</span><span class="n">tempfilename</span><span class="p">(</span><span class="s">&#39;table.txt&#39;</span><span class="p">)</span>
+
+<span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+<span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;0 3</span><span class="se">\n</span><span class="s">1 3</span><span class="se">\n</span><span class="s">5 1.2</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+<span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+<span class="c"># Plot the four datasets</span>
+<span class="c">#</span>
+<span class="c"># The kind of input is selected with the keyword arguments beginning</span>
+<span class="c"># with &#39;in_&#39;.</span>
+<span class="c">#</span>
+<span class="c"># Specifying R=True and J=True results &#39;-R&#39; and &#39;-J&#39; being passed</span>
+<span class="c"># to the GMT program without any arguments. (Doing so causes GMT to</span>
+<span class="c"># repeat the previous values.)</span>
+
+<span class="n">gmt</span><span class="o">.</span><span class="n">psxy</span><span class="p">(</span> <span class="n">R</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">W</span><span class="o">=</span><span class="s">&#39;1p,black&#39;</span><span class="p">,</span> <span class="n">in_columns</span><span class="o">=</span><span class="n">data_as_columns</span> <span class="p">)</span>
+<span class="n">gmt</span><span class="o">.</span><span class="n">psxy</span><span class="p">(</span> <span class="n">R</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">W</span><span class="o">=</span><span class="s">&#39;1p,red&#39;</span><span class="p">,</span>   <span class="n">in_rows</span><span class="o">=</span><span class="n">data_as_rows</span> <span class="p">)</span>
+<span class="n">gmt</span><span class="o">.</span><span class="n">psxy</span><span class="p">(</span> <span class="n">R</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">W</span><span class="o">=</span><span class="s">&#39;1p,blue&#39;</span><span class="p">,</span>  <span class="n">in_string</span><span class="o">=</span><span class="n">data_as_string</span> <span class="p">)</span>
+<span class="n">gmt</span><span class="o">.</span><span class="n">psxy</span><span class="p">(</span> <span class="n">R</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">W</span><span class="o">=</span><span class="s">&#39;1p,purple,a&#39;</span><span class="p">,</span> <span class="n">in_filename</span><span class="o">=</span><span class="n">filename</span> <span class="p">)</span>
+
+<span class="n">gmt</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s">&#39;example2.pdf&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="remarks">
+<h3>Remarks<a class="headerlink" href="#remarks" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><strong>Important:</strong> Appropriate appending of <tt class="docutils literal"><span class="pre">-O</span></tt> and <tt class="docutils literal"><span class="pre">-K</span></tt> is handled automatically.</li>
+<li>With <tt class="docutils literal"><span class="pre">in_columns</span></tt> and <tt class="docutils literal"><span class="pre">in_rows</span></tt> any iterable can be used. E.g. !NumPy arrays!</li>
+<li>See documentation of <a class="reference internal" href="documentation.html#gmtpy.GMT.__getattr__" title="gmtpy.GMT.__getattr__"><tt class="xref py py-meth docutils literal"><span class="pre">GMT.__getattr__()</span></tt></a> for details</li>
+</ul>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="example-3-using-default-layouts">
+<h2>Example 3: Using default layouts<a class="headerlink" href="#example-3-using-default-layouts" title="Permalink to this headline">¶</a></h2>
+<p>This example shows how to use a default layout to gain full control over the placement of a single plot on the output page.</p>
+<img alt="_images/example3.png" class="boxed align-center" src="_images/example3.png" />
+<div class="section" id="id3">
+<h3>Python code<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">gmtpy</span> <span class="kn">import</span> <span class="n">GMT</span><span class="p">,</span> <span class="n">cm</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="c"># Some data to plot...</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">101</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mf">2.5</span>
+
+<span class="n">gmt</span> <span class="o">=</span> <span class="n">GMT</span><span class="p">(</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;PAGE_COLOR&#39;</span><span class="p">:</span><span class="s">&#39;247/247/240&#39;</span><span class="p">}</span> <span class="p">)</span>
+
+<span class="c"># Get a default layout for plotting.</span>
+<span class="c"># This produces a FrameLayout, a layout built of five widgets,</span>
+<span class="c"># a &#39;center&#39; widget, surrounded by four widgets for the margins:</span>
+<span class="c">#</span>
+<span class="c">#          +---------------------------+</span>
+<span class="c">#          |             top           |</span>
+<span class="c">#          +---------------------------+</span>
+<span class="c">#          |      |            |       |</span>
+<span class="c">#          | left |   center   | right |</span>
+<span class="c">#          |      |            |       |</span>
+<span class="c">#          +---------------------------+</span>
+<span class="c">#          |           bottom          |</span>
+<span class="c">#          +---------------------------+</span>
+
+<span class="n">layout</span> <span class="o">=</span> <span class="n">gmt</span><span class="o">.</span><span class="n">default_layout</span><span class="p">()</span>
+
+<span class="c"># We will plot in the &#39;center&#39; widget:</span>
+<span class="n">plot_widget</span> <span class="o">=</span> <span class="n">layout</span><span class="o">.</span><span class="n">get_widget</span><span class="p">(</span><span class="s">&#39;center&#39;</span><span class="p">)</span>
+
+
+<span class="c"># Set width of plot area to 8 cm and height of the &#39;top&#39; margin</span>
+<span class="c"># to 1 cm. The other values are calculated automatically.</span>
+<span class="n">plot_widget</span><span class="o">.</span><span class="n">set_horizontal</span><span class="p">(</span> <span class="mi">8</span><span class="o">*</span><span class="n">cm</span> <span class="p">)</span>
+<span class="n">layout</span><span class="o">.</span><span class="n">get_widget</span><span class="p">(</span><span class="s">&#39;top&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">set_vertical</span><span class="p">(</span> <span class="mi">1</span><span class="o">*</span><span class="n">cm</span> <span class="p">)</span>
+
+<span class="c"># Define how the widget&#39;s output parameters are translated</span>
+<span class="c"># into -X, -Y and -J option arguments. (This could be skipped</span>
+<span class="c"># in this example, because the following templates</span>
+<span class="c"># are just the built-in defaults)</span>
+<span class="n">plot_widget</span><span class="p">[</span><span class="s">&#39;X&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;-Xa</span><span class="si">%(xoffset)g</span><span class="s">p&#39;</span>
+<span class="n">plot_widget</span><span class="p">[</span><span class="s">&#39;Y&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;-Ya</span><span class="si">%(yoffset)g</span><span class="s">p&#39;</span>
+<span class="n">plot_widget</span><span class="p">[</span><span class="s">&#39;J&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;-JX</span><span class="si">%(width)g</span><span class="s">p/</span><span class="si">%(height)g</span><span class="s">p&#39;</span>
+
+<span class="n">gmt</span><span class="o">.</span><span class="n">psbasemap</span><span class="p">(</span> <span class="n">R</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span>
+               <span class="n">B</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%g</span><span class="s">:Time [ s ]:/</span><span class="si">%g</span><span class="s">:Amplitude [ m ]:SWne&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span>
+               <span class="o">*</span><span class="n">plot_widget</span><span class="o">.</span><span class="n">XYJ</span><span class="p">())</span>
+
+<span class="n">gmt</span><span class="o">.</span><span class="n">psxy</span><span class="p">(</span> <span class="n">R</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+          <span class="n">W</span><span class="o">=</span><span class="s">&#39;2p,blue,o&#39;</span><span class="p">,</span>
+          <span class="n">in_columns</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">),</span>
+          <span class="o">*</span><span class="n">plot_widget</span><span class="o">.</span><span class="n">XYJ</span><span class="p">()</span> <span class="p">)</span>
+
+<span class="c"># Save the output, while replacing GMT&#39;s default bounding box</span>
+<span class="c"># with the exact box of the layout.</span>
+<span class="n">gmt</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s">&#39;example3.pdf&#39;</span><span class="p">,</span> <span class="n">bbox</span><span class="o">=</span><span class="n">layout</span><span class="o">.</span><span class="n">bbox</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="short-version-only-what-is-actually-needed">
+<h3>Short version, only what is actually needed<a class="headerlink" href="#short-version-only-what-is-actually-needed" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">gmtpy</span> <span class="kn">import</span> <span class="n">GMT</span><span class="p">,</span> <span class="n">cm</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">101</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mf">2.5</span>
+
+<span class="n">gmt</span> <span class="o">=</span> <span class="n">GMT</span><span class="p">(</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;PAGE_COLOR&#39;</span><span class="p">:</span><span class="s">&#39;247/247/240&#39;</span><span class="p">}</span> <span class="p">)</span>
+
+<span class="n">layout</span> <span class="o">=</span> <span class="n">gmt</span><span class="o">.</span><span class="n">default_layout</span><span class="p">()</span>
+<span class="n">plot_widget</span> <span class="o">=</span> <span class="n">layout</span><span class="o">.</span><span class="n">get_widget</span><span class="p">(</span><span class="s">&#39;center&#39;</span><span class="p">)</span>
+<span class="n">plot_widget</span><span class="o">.</span><span class="n">set_horizontal</span><span class="p">(</span> <span class="mi">8</span><span class="o">*</span><span class="n">cm</span> <span class="p">)</span>
+<span class="n">layout</span><span class="o">.</span><span class="n">get_widget</span><span class="p">(</span><span class="s">&#39;top&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">set_vertical</span><span class="p">(</span> <span class="mi">1</span><span class="o">*</span><span class="n">cm</span> <span class="p">)</span>
+
+<span class="n">gmt</span><span class="o">.</span><span class="n">psbasemap</span><span class="p">(</span> <span class="n">R</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span>
+               <span class="n">B</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%g</span><span class="s">:Time [ s ]:/</span><span class="si">%g</span><span class="s">:Amplitude [ m ]:SWne&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span>
+               <span class="o">*</span><span class="n">plot_widget</span><span class="o">.</span><span class="n">XYJ</span><span class="p">())</span>
+
+<span class="n">gmt</span><span class="o">.</span><span class="n">psxy</span><span class="p">(</span> <span class="n">R</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+          <span class="n">W</span><span class="o">=</span><span class="s">&#39;2p,blue,o&#39;</span><span class="p">,</span>
+          <span class="n">in_columns</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">),</span>
+          <span class="o">*</span><span class="n">plot_widget</span><span class="o">.</span><span class="n">XYJ</span><span class="p">()</span> <span class="p">)</span>
+
+<span class="n">gmt</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s">&#39;example3.pdf&#39;</span><span class="p">,</span> <span class="n">bbox</span><span class="o">=</span><span class="n">layout</span><span class="o">.</span><span class="n">bbox</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h3>Remarks<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>The default layouts are tuned to the <tt class="docutils literal"><span class="pre">PAPER_MEDIA</span></tt> and <tt class="docutils literal"><span class="pre">PAGE_ORIENTATION</span></tt>
+<strong class="program">gmtdefaults</strong> (<a class="reference external" href="http://gmt.soest.hawaii.edu/gmt/html/man/gmtdefaults.html">man</a>)
+variables. See the documentation for the <a class="reference internal" href="documentation.html#gmtpy.GMT.default_layout" title="gmtpy.GMT.default_layout"><tt class="xref py py-meth docutils literal"><span class="pre">GMT.default_layout()</span></tt></a> method for details.</li>
+</ul>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="example-4-creating-a-custom-layout">
+<h2>Example 4: Creating a custom layout<a class="headerlink" href="#example-4-creating-a-custom-layout" title="Permalink to this headline">¶</a></h2>
+<p>How to set up a custom layout to nicely place two plots on one page.</p>
+<img alt="_images/example4.png" class="boxed align-center" src="_images/example4.png" />
+<div class="section" id="id6">
+<h3>Python code<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">gmtpy</span> <span class="kn">import</span> <span class="n">GMT</span><span class="p">,</span> <span class="n">cm</span><span class="p">,</span> <span class="n">GridLayout</span><span class="p">,</span> <span class="n">FrameLayout</span><span class="p">,</span> <span class="n">golden_ratio</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="c"># some data to plot...</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">101</span><span class="p">)</span>
+<span class="n">ys</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mf">2.5</span><span class="p">,</span>  <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mf">2.5</span><span class="p">)</span>
+
+<span class="n">gmt</span> <span class="o">=</span> <span class="n">GMT</span><span class="p">(</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;PAGE_COLOR&#39;</span><span class="p">:</span><span class="s">&#39;247/247/240&#39;</span><span class="p">}</span> <span class="p">)</span>
+
+<span class="n">layout</span> <span class="o">=</span> <span class="n">GridLayout</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">widgets</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">iwidget</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+    <span class="n">inner_layout</span> <span class="o">=</span> <span class="n">FrameLayout</span><span class="p">()</span>
+    <span class="n">layout</span><span class="o">.</span><span class="n">set_widget</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">iwidget</span><span class="p">,</span> <span class="n">inner_layout</span><span class="p">)</span>
+    <span class="n">widget</span> <span class="o">=</span> <span class="n">inner_layout</span><span class="o">.</span><span class="n">get_widget</span><span class="p">(</span><span class="s">&#39;center&#39;</span><span class="p">)</span>
+    <span class="n">widget</span><span class="o">.</span><span class="n">set_horizontal</span><span class="p">(</span> <span class="mi">7</span><span class="o">*</span><span class="n">cm</span> <span class="p">)</span>
+    <span class="n">widget</span><span class="o">.</span><span class="n">set_vertical</span><span class="p">(</span> <span class="mi">7</span><span class="o">*</span><span class="n">cm</span><span class="o">/</span><span class="n">golden_ratio</span> <span class="p">)</span>
+    <span class="n">widgets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">widget</span> <span class="p">)</span>
+
+<span class="c"># gmt.draw_layout( layout )</span>
+<span class="c"># print layout</span>
+
+<span class="k">for</span> <span class="n">widget</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">widgets</span><span class="p">,</span> <span class="n">ys</span><span class="p">):</span>
+    <span class="n">gmt</span><span class="o">.</span><span class="n">psbasemap</span><span class="p">(</span> <span class="n">R</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span>
+                <span class="n">B</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%g</span><span class="s">:Time [ s ]:/</span><span class="si">%g</span><span class="s">:Amplitude [ m ]:SWne&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span>
+                <span class="o">*</span><span class="n">widget</span><span class="o">.</span><span class="n">XYJ</span><span class="p">())</span>
+
+    <span class="n">gmt</span><span class="o">.</span><span class="n">psxy</span><span class="p">(</span> <span class="n">R</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+            <span class="n">W</span><span class="o">=</span><span class="s">&#39;2p,blue,o&#39;</span><span class="p">,</span>
+            <span class="n">in_columns</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">),</span>
+            <span class="o">*</span><span class="n">widget</span><span class="o">.</span><span class="n">XYJ</span><span class="p">()</span> <span class="p">)</span>
+
+<span class="n">gmt</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s">&#39;example4.pdf&#39;</span><span class="p">,</span> <span class="n">bbox</span><span class="o">=</span><span class="n">layout</span><span class="o">.</span><span class="n">bbox</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="explanation">
+<h3>Explanation<a class="headerlink" href="#explanation" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>Layouts may be arbitrarily nested. In this example two <a class="reference internal" href="documentation.html#gmtpy.FrameLayout" title="gmtpy.FrameLayout"><tt class="xref py py-class docutils literal"><span class="pre">FrameLayout</span></tt></a> objects are placed in the widgets of a <a class="reference internal" href="documentation.html#gmtpy.GridLayout" title="gmtpy.GridLayout"><tt class="xref py py-class docutils literal"><span class="pre">GridLayout</span></tt></a>.</li>
+<li>Three basic layout classes are available: <a class="reference internal" href="documentation.html#gmtpy.FrameLayout" title="gmtpy.FrameLayout"><tt class="xref py py-class docutils literal"><span class="pre">FrameLayout</span></tt></a>, <a class="reference internal" href="documentation.html#gmtpy.GridLayout" title="gmtpy.GridLayout"><tt class="xref py py-class docutils literal"><span class="pre">GridLayout</span></tt></a> and <a class="reference internal" href="documentation.html#gmtpy.CenterLayout" title="gmtpy.CenterLayout"><tt class="xref py py-class docutils literal"><span class="pre">CenterLayout</span></tt></a>. See also documentation for <a class="reference internal" href="documentation.html#gmtpy.Widget" title="gmtpy.Widget"><tt class="xref py py-class docutils literal"><span class="pre">Widget</span></tt></a>, from which they all inherit.</li>
+<li>The <a class="reference internal" href="documentation.html#gmtpy.GridLayout.set_widget" title="gmtpy.GridLayout.set_widget"><tt class="xref py py-meth docutils literal"><span class="pre">GridLayout.set_widget()</span></tt></a> method is used to insert the two <a class="reference internal" href="documentation.html#gmtpy.FrameLayout" title="gmtpy.FrameLayout"><tt class="xref py py-class docutils literal"><span class="pre">FrameLayout</span></tt></a> objects into it.</li>
+<li>The layout hierarchy must be set up and configured completely <em>first</em>. After that, use it to place the plots.</li>
+</ul>
+</div>
+<div class="section" id="how-to-debug-the-layout-design">
+<h3>How to debug the layout design<a class="headerlink" href="#how-to-debug-the-layout-design" title="Permalink to this headline">¶</a></h3>
+<p>In the above example, uncommenting the line:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">print</span> <span class="n">layout</span>
+</pre></div>
+</div>
+<p>will print the sizes and positions of all widgets in the layout:</p>
+<div class="highlight-python"><pre>gmtpy.GridLayout (368.504 x 455.497) (0, 0)
+  gmtpy.FrameLayout (368.504 x 227.749) (0, 227.749)
+    gmtpy.Widget (85.0394 x 122.634) (0, 280.306)
+    gmtpy.Widget (85.0394 x 122.634) (283.465, 280.306)
+    gmtpy.Widget (368.504 x 52.5574) (0, 402.94)
+    gmtpy.Widget (368.504 x 52.5574) (0, 227.749)
+    gmtpy.Widget (198.425 x 122.634) (85.0394, 280.306)
+  gmtpy.FrameLayout (368.504 x 227.749) (0, 0)
+    gmtpy.Widget (85.0394 x 122.634) (0, 52.5574)
+    gmtpy.Widget (85.0394 x 122.634) (283.465, 52.5574)
+    gmtpy.Widget (368.504 x 52.5574) (0, 175.191)
+    gmtpy.Widget (368.504 x 52.5574) (0, 0)
+    gmtpy.Widget (198.425 x 122.634) (85.0394, 52.5574)</pre>
+</div>
+<p>If you want to visually inspect the layout, you may additionally uncomment the line containing</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">gmt</span><span class="o">.</span><span class="n">draw_layout</span><span class="p">(</span> <span class="n">layout</span> <span class="p">)</span>
+</pre></div>
+</div>
+<p>The output graphics will then be underlaid by colored boxes, each representing one of the  widgets in the layout:</p>
+<img alt="_images/example4_layout.png" class="boxed align-center" src="_images/example4_layout.png" />
+</div>
+</div>
+</div>
+
+
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="documentation.html" title="Reference Manual"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="install.html" title="Installation"
+             >previous</a> |</li>
+        <li><a href="index.html">GmtPy v0.1 Manual</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, Sebastian Heimann.
+    </div>
+  </body>
+</html>
