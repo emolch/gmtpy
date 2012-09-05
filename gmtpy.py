@@ -826,15 +826,29 @@ def get_gmt_version( gmtdefaultsbinary, gmthomedir ):
 def detect_gmt_installation():
     output = subprocess.Popen(["which", "gmtdefaults"], stdout=subprocess.PIPE).communicate()[0].strip()
     if not output:
-        raise Exception("Can't find GMT installation via PATH")
+        raise ValueError("Can't find GMT installation via PATH")
     
     gmtbin = os.path.dirname(output)
-    if 'GMTHOME' not in os.environ:
-        raise Exception('GMTHOME environment variable not set.')
-    
-    gmthome = os.environ['GMTHOME']
+    gmthome = os.environ['GMTHOME'] # should throw a KeyError if not satisfied  
+
     gmtversion = get_gmt_version( pjoin(gmtbin,'gmtdefaults'), gmthome )
     return gmtversion, gmthome, gmtbin 
+
+def check_default_ubuntu_gmt_path():
+    gmtbin = pjoin('/','usr','lib','gmt','bin')
+    gmthome = pjoin('/','usr','lib','gmt')
+    gmtversion = get_gmt_version( pjoin(gmtbin,'gmtdefaults'), gmthome )
+    return gmtversion, gmthome, gmtbin 
+
+def check_detect_gmt_installation():
+    try:
+        gmtversion, gmthome, gmtbin = detect_gmt_installation()
+    except (ValueError, KeyError):
+        gmtversion, gmthome, gmtbin = check_default_ubuntu_gmt_path()
+    except:
+        raise Exception("Can't find GMT installation via PATH or default location")
+    return gmtversion, gmthome, gmtbin
+
 
 def appropriate_defaults_version(version):
     
@@ -888,7 +902,7 @@ def diff_defaults(v1,v2):
 def setup_gmt_installations():
     if not setup_gmt_installations.have_done:
         if not _gmt_installations:
-            gmtversion, gmthome, gmtbin = detect_gmt_installation()
+            gmtversion, gmthome, gmtbin = check_detect_gmt_installation()
             _gmt_installations[gmtversion] = { 'home': gmthome, 'bin': gmtbin }
 
         # store defaults as dicts into the gmt installations dicts
