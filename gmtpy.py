@@ -842,13 +842,16 @@ def check_default_ubuntu_gmt_path():
 
 def check_detect_gmt_installation():
     try:
-        gmtversion, gmthome, gmtbin = detect_gmt_installation()
+        return detect_gmt_installation()
     except (ValueError, KeyError):
-        gmtversion, gmthome, gmtbin = check_default_ubuntu_gmt_path()
-    except:
-        raise Exception("Can't find GMT installation via PATH or default location")
-    return gmtversion, gmthome, gmtbin
+        pass
 
+    try:
+        return check_default_ubuntu_gmt_path()
+    except:
+        pass 
+
+    raise Exception("Can't find GMT installation via PATH or default location")
 
 def appropriate_defaults_version(version):
     
