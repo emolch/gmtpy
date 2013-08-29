@@ -1143,12 +1143,14 @@ def griddata_regular(x,y,z, xvals, yvals):
     return znew.reshape(ny,nx)
     
 
-def guess_field_size(x_sorted,y_sorted,z=None):
+def guess_field_size(x_sorted,y_sorted,z=None, mode=None):
     critical_fraction = 1./num.e - 0.014*3
     xs = x_sorted
     ys = y_sorted
     nxs, nys = nvals(xs), nvals(ys)
-    if xs.size == nxs*nys:     # exact match 
+    if mode == 'nonrandom':
+        return nxs, nys, 0
+    elif xs.size == nxs*nys:     # exact match 
         return nxs, nys, 0
     elif nxs >= xs.size*critical_fraction and nys >= xs.size*critical_fraction :    # possibly randomly sampled
         nxs = int(math.sqrt(x.size))
@@ -1157,7 +1159,7 @@ def guess_field_size(x_sorted,y_sorted,z=None):
     else:
         return nxs, nys, 1
     
-def griddata_auto(x,y,z):
+def griddata_auto(x,y,z, mode=None):
     '''Grid tabular XYZ data by binning.
     
     This function does some extra work to guess the size of the grid. This
@@ -1174,7 +1176,7 @@ def griddata_auto(x,y,z):
     x, y, z = [ num.asarray(X) for X in (x,y,z) ]
     assert x.size == y.size == z.size
     xs, ys = num.sort(x),num.sort(y)
-    nx, ny, badness = guess_field_size(xs,ys,z)
+    nx, ny, badness = guess_field_size(xs,ys,z, mode=mode)
     if badness <= 1:
         xf = guess_vals(xs)
         yf = guess_vals(ys)
