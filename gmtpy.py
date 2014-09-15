@@ -3687,7 +3687,7 @@ if __name__ == '__main__':
     ### Example 1
 
     gmt = GMT()
-    gmt.pscoast(R='g', J='E32/30/8i', B='10g10', D='c', A=10000,
+    gmt.pscoast(R='g', J='E32/30/170/8i', B='10g10', D='c', A=10000,
                 S=(114, 159, 207), G=(233, 185, 110), W='thinnest')
     gmt.save(pjoin(examples_dir, 'example1.pdf'))
     gmt.save(pjoin(examples_dir, 'example1.ps'))
@@ -3699,7 +3699,7 @@ if __name__ == '__main__':
 
     gmt.pscoast(
         R='g',
-        J='E%g/%g/%g/%gi' % (0., 0., 180., 6.),
+        J='E%g/%g/%g/%gi' % (0., 0., 160., 6.),
         B='0g0',
         D='c',
         A=10000,
